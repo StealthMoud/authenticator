@@ -12,7 +12,10 @@
     <header>
       <div class="header-main">
         <img src="icons/icon48.png" alt="Logo" class="logo">
-        <h1>Authenticator</h1>
+        <div>
+          <h1>Authenticator</h1>
+          <div id="active-profile" style="font-size: 0.6rem; color: var(--text-dim); margin-top: -2px; opacity: 0.7;"></div>
+        </div>
       </div>
       <div class="header-actions">
         <button id="privacy-btn" title="Toggle Privacy Mode">
@@ -52,15 +55,15 @@
       <div class="modal-content">
         <button class="close-modal">&times;</button>
         
-        <!-- GitHub Config with Humanized, Multi-step Instructions -->
+        <!-- GitHub Config -->
         <div id="github-config" class="hidden">
           <h3>Cloud Sync Setup</h3>
           <div class="config-help" style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 16px; line-height: 1.5; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 12px; border-left: 3px solid var(--primary);">
-            <b>1. Create Repo:</b> Go to Github and make a <b>Private</b> repository (e.g., <code>vault</code>).<br>
-            <b>2. Find Settings:</b> Top-right Profile > <b>Settings</b> > <b>Developer settings</b> (bottom left).<br>
-            <b>3. Get Token:</b> <b>Personal access tokens</b> > <b>Tokens (classic)</b>.<br>
-            <b>4. Configure:</b> <b>Generate new token (classic)</b>. Name it "Sync" and check the <b>[x] repo</b> checkbox.<br>
-            <b>5. Finish:</b> Scroll down, click <b>Generate token</b>, copy it, and paste here.
+            <b>1. Create Repo:</b> Make a <b>Private</b> repo on GitHub (e.g. <code>authenticator-vault</code>).<br>
+            <b>2. Settings:</b> Profile > <b>Settings</b> > <b>Developer settings</b>.<br>
+            <b>3. Token:</b> <b>PATs</b> > <b>Tokens (classic)</b> > <b>Generate classic</b>.<br>
+            <b>4. Permissions:</b> Name it "Sync" and check <b>repo</b>.<br>
+            <b>5. Dynamic Profiles:</b> Each Chrome profile email will be saved seperately automatically.
           </div>
           
           <input type="password" id="gh-token" placeholder="Paste Token here (ghp_...)">
@@ -73,7 +76,7 @@
 
         <div id="import-main-view">
           <h2>Import Account</h2>
-          <p>Scan a QR code or fetch from your cloud vault.</p>
+          <p>Scan a QR or fetch from your cloud vault.</p>
           
           <div id="drop-zone" class="drop-zone">
             <div class="drop-zone-icon">
@@ -86,9 +89,22 @@
           <div id="import-status" class="status-message"></div>
 
           <div id="github-restore-section" style="margin-top: 20px;">
-            <button id="fetch-github-btn" class="btn-premium">Fetch from GitHub</button>
-            <div id="github-accounts-list" style="margin-top:10px; max-height:160px; overflow-y:auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
-            <button id="import-all-github" class="btn-premium hidden" style="margin-top:12px; background: var(--accent);">Import Everything</button>
+            <button id="fetch-github-btn" class="btn-premium">Fetch Cloud Profiles</button>
+            
+            <div id="profile-selection-list" class="hidden" style="margin-top: 15px;">
+              <h4 style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px;">Select Profile to Import:</h4>
+              <div id="github-profiles-list" style="max-height:120px; overflow-y:auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;"></div>
+              
+              <div style="display: flex; gap: 8px;">
+                <button id="import-selected-profile" class="btn-premium" style="font-size: 0.7rem; padding: 10px;">Import Selected</button>
+                <button id="import-all-github" class="btn-premium" style="font-size: 0.7rem; padding: 10px; background: var(--accent);">Import All Profiles</button>
+              </div>
+            </div>
+            
+            <div id="github-accounts-preview" class="hidden" style="margin-top:15px; border-top: 1px solid var(--border-glass); padding-top: 10px;">
+              <h4 id="preview-title" style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px;">Accounts in Profile:</h4>
+              <div id="github-accounts-list" style="max-height:100px; overflow-y:auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            </div>
           </div>
         </div>
       </div>

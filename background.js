@@ -8,17 +8,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+async function getUserInfo() {
+  return new Promise((resolve) => {
+    chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (userInfo) => {
+      resolve(userInfo.email || 'offline-profile');
+    });
+  });
+}
+
 async function handleGithubSync(data) {
-  // we use a personal access token for simlicity as requested for "backing up"
-  // in a real prod app we'd use oauth2 but this is faster for personal use
-  const { ghToken, ghRepo, ghPath } = await chrome.storage.local.get(['ghToken', 'ghRepo', 'ghPath']);
+  const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
   
   if (!ghToken || !ghRepo) {
     return { success: false, error: 'GitHub not configured' };
   }
 
-  const path = ghPath || 'authenticator_backup.json';
-  const url = `https://api.github.com/repos/${ghRepo}/contents/${path}`;
+  const userEmail = await getUserInfo();
+  // we save each profile in its own file under a profiles directory
+  const fileName = `profiles/${userEmail.replace(/[@.]/g, '_')}.json`;
+  const url = `https://api.github.com/repos/${ghRepo}/contents/${fileName}`;
   
   try {
     // 1. get existing file sha if it exists
@@ -32,7 +40,13 @@ async function handleGithubSync(data) {
       sha = existing.sha;
     }
 
-    // 2. upload/update file
+    // 2. upload/update file with profile metadata
+    const profilePayload = {
+      email: userEmail,
+      updatedAt: new Date().toISOString(),
+      accounts: data
+    };
+
     const putRes = await fetch(url, {
       method: 'PUT',
       headers: {
@@ -40,14 +54,14 @@ async function handleGithubSync(data) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        message: 'vault sync',
-        content: btoa(JSON.stringify(data, null, 2)),
+        message: `vault sync for ${userEmail}`,
+        content: btoa(JSON.stringify(profilePayload, null, 2)),
         sha: sha
       })
     });
 
     if (putRes.ok) {
-      return { success: true };
+      return { success: true, profile: userEmail };
     } else {
       const err = await putRes.json();
       return { success: false, error: err.message };

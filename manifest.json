@@ -3,7 +3,7 @@
   "name": "Authenticator",
   "version": "1.0",
   "description": "A clean, simple authenticator.",
-  "permissions": ["storage", "identity"],
+  "permissions": ["storage", "identity", "identity.email"],
   "background": { 
     "service_worker": "background.js" 
   }, 
@@ -20,5 +20,8 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
