@@ -7,7 +7,7 @@ class AuthenticatorApp {
     this.timerInterval = null;
     this.storageKey = 'authenticator_accounts';
     this.currentSort = 'custom';
-    this.sortAscending = true; // toggle for order
+    this.sortAscending = true;
     this.privacyMode = false;
     this.currentEmail = '';
     this.loadedProfiles = [];
@@ -35,6 +35,8 @@ class AuthenticatorApp {
     this.ghRepoInput = document.getElementById('gh-repo');
     this.activeProfileEl = document.getElementById('active-profile');
     this.sortOrderBtn = document.getElementById('sort-order-btn');
+    this.syncErrorBanner = document.getElementById('sync-error-banner');
+    this.fixSyncBtn = document.getElementById('fix-sync-btn');
 
     this.init();
   }
@@ -46,22 +48,24 @@ class AuthenticatorApp {
     this.setupEventListeners();
     this.startTimer();
     this.applyFiltersAndSort();
+    this.checkSyncStatus();
   }
 
   detectIdentity() {
     chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (info) => {
       this.currentEmail = info.email || 'offline-profile';
-      this.activeProfileEl.innerText = `Sync: ${this.currentEmail}`;
+      if (this.activeProfileEl) this.activeProfileEl.innerText = `Sync: ${this.currentEmail}`;
     });
   }
 
   async loadAccounts() {
     return new Promise((resolve) => {
-      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending'], (result) => {
+      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError'], (result) => {
         this.accounts = result[this.storageKey] || [];
         this.privacyMode = result.privacyMode || false;
         this.sortAscending = (result.sortAscending !== undefined) ? result.sortAscending : true;
         this.filteredAccounts = [...this.accounts];
+        this.syncError = result.syncError || false;
         this.updateOrderIcon();
         resolve();
       });
@@ -71,8 +75,8 @@ class AuthenticatorApp {
   async loadGithubConfig() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['ghToken', 'ghRepo'], (result) => {
-        if (result.ghToken) this.ghTokenInput.value = result.ghToken;
-        if (result.ghRepo) this.ghRepoInput.value = result.ghRepo;
+        if (result.ghToken && this.ghTokenInput) this.ghTokenInput.value = result.ghToken;
+        if (result.ghRepo && this.ghRepoInput) this.ghRepoInput.value = result.ghRepo;
         resolve();
       });
     });
@@ -87,8 +91,8 @@ class AuthenticatorApp {
   }
 
   setupEventListeners() {
-    this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
-    this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
+    if (this.searchInput) this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
+    if (this.privacyBtn) this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
 
     if (this.exportVaultBtn) this.exportVaultBtn.addEventListener('click', () => this.exportVault());
     if (this.githubSyncBtn) this.githubSyncBtn.addEventListener('click', () => this.syncToGithub());
@@ -98,7 +102,13 @@ class AuthenticatorApp {
     if (this.importSelectedGhBtn) this.importSelectedGhBtn.addEventListener('click', () => this.importFromSelectedProfile());
     if (this.importAllGhBtn) this.importAllGhBtn.addEventListener('click', () => this.importAllFromCloud());
 
-    // sort direction toggle
+    if (this.fixSyncBtn) {
+      this.fixSyncBtn.addEventListener('click', () => {
+        this.importModal.classList.remove('hidden');
+        document.getElementById('github-config').classList.remove('hidden');
+      });
+    }
+
     if (this.sortOrderBtn) {
       this.sortOrderBtn.addEventListener('click', () => {
         this.sortAscending = !this.sortAscending;
@@ -108,12 +118,16 @@ class AuthenticatorApp {
       });
     }
 
-    this.ghTokenInput.addEventListener('input', () => {
-      chrome.storage.local.set({ ghToken: this.ghTokenInput.value.trim() });
-    });
-    this.ghRepoInput.addEventListener('input', () => {
-      chrome.storage.local.set({ ghRepo: this.ghRepoInput.value.trim() });
-    });
+    if (this.ghTokenInput) {
+      this.ghTokenInput.addEventListener('input', () => {
+        chrome.storage.local.set({ ghToken: this.ghTokenInput.value.trim() });
+      });
+    }
+    if (this.ghRepoInput) {
+      this.ghRepoInput.addEventListener('input', () => {
+        chrome.storage.local.set({ ghRepo: this.ghRepoInput.value.trim() });
+      });
+    }
 
     document.querySelectorAll('.sort-chip').forEach(chip => {
       if (chip.dataset.sort) {
@@ -126,12 +140,14 @@ class AuthenticatorApp {
       }
     });
 
-    this.clearAllBtn.addEventListener('click', () => {
-      if (this.accounts.length === 0) {
-        this.showToast('no data to clear'); return;
-      }
-      if (confirm('purge all data? u cant undo this!')) this.clearAllAccounts();
-    });
+    if (this.clearAllBtn) {
+      this.clearAllBtn.addEventListener('click', () => {
+        if (this.accounts.length === 0) {
+          this.showToast('no data to clear'); return;
+        }
+        if (confirm('purge all data? u cant undo this!')) this.clearAllAccounts();
+      });
+    }
 
     const toggleModal = () => {
       this.importModal.classList.toggle('hidden');
@@ -141,21 +157,24 @@ class AuthenticatorApp {
     if (this.closeModalBtn) this.closeModalBtn.addEventListener('click', toggleModal);
     window.addEventListener('click', (e) => { if (e.target === this.importModal) toggleModal(); });
 
-    this.dropZone.addEventListener('click', () => this.fileInput.click());
-    this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-    this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('dragover'); });
-    this.dropZone.addEventListener('dragleave', () => this.dropZone.classList.remove('dragover'));
-    this.dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      this.dropZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file) this.processFile(file);
-    });
+    if (this.dropZone) {
+      this.dropZone.addEventListener('click', () => this.fileInput.click());
+      this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+      this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('dragover'); });
+      this.dropZone.addEventListener('dragleave', () => this.dropZone.classList.remove('dragover'));
+      this.dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        this.dropZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) this.processFile(file);
+      });
+    }
   }
 
   updateOrderIcon() {
     const asc = document.getElementById('order-asc');
     const desc = document.getElementById('order-desc');
+    if (!asc || !desc) return;
     if (this.sortAscending) {
       asc.classList.remove('hidden');
       desc.classList.add('hidden');
@@ -163,6 +182,20 @@ class AuthenticatorApp {
       asc.classList.add('hidden');
       desc.classList.remove('hidden');
     }
+  }
+
+  checkSyncStatus() {
+    if (this.syncError) {
+      this.syncErrorBanner.classList.remove('hidden');
+    } else {
+      this.syncErrorBanner.classList.add('hidden');
+    }
+  }
+
+  setSyncError(hasError) {
+    this.syncError = hasError;
+    chrome.storage.local.set({ syncError: hasError });
+    this.checkSyncStatus();
   }
 
   // --- github logic ---
@@ -174,6 +207,7 @@ class AuthenticatorApp {
     await chrome.storage.local.set({ ghToken: token, ghRepo: repo });
     document.getElementById('github-config').classList.add('hidden');
     this.showToast('config saved sucsesfully');
+    this.setSyncError(false); // reset error on new config
     this.syncToGithub();
   }
 
@@ -184,10 +218,16 @@ class AuthenticatorApp {
       document.getElementById('github-config').classList.remove('hidden');
       return;
     }
+
     this.showToast('syncing to cloude...');
     chrome.runtime.sendMessage({ action: 'githubSync', data: this.accounts }, (res) => {
-      if (res && res.success) this.showToast('vault synched!');
-      else this.showToast('sync faild: ' + (res ? res.error : 'timeout'));
+      if (res && res.success) {
+        this.showToast('vault synched!');
+        this.setSyncError(false);
+      } else {
+        this.showToast('sync faild: ' + (res ? res.error : 'timeout'));
+        this.setSyncError(true);
+      }
     });
   }
 
@@ -215,6 +255,7 @@ class AuthenticatorApp {
 
   renderProfileSelection() {
     const container = document.getElementById('github-profiles-list');
+    if (!container) return;
     container.innerHTML = '';
     document.getElementById('profile-selection-list').classList.remove('hidden');
     this.loadedProfiles.forEach((profile, index) => {
@@ -236,6 +277,7 @@ class AuthenticatorApp {
 
   renderAccountPreview(accounts) {
     const container = document.getElementById('github-accounts-list');
+    if (!container) return;
     container.innerHTML = '';
     document.getElementById('github-accounts-preview').classList.remove('hidden');
     accounts.forEach(acc => {
@@ -253,6 +295,7 @@ class AuthenticatorApp {
     profile.accounts.forEach(acc => { if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) addedCount++; });
     this.applyFiltersAndSort(); this.saveAccounts();
     this.showToast(`imported ${addedCount} accounts`);
+    this.syncToGithub(); // sync back to current profile
   }
 
   importAllFromCloud() {
@@ -262,6 +305,7 @@ class AuthenticatorApp {
     });
     this.applyFiltersAndSort(); this.saveAccounts();
     this.showToast(`merged ${addedCount} accounts from all profiles`);
+    this.syncToGithub(); // sync back to current profile
   }
 
   addAccountNoRender(secret, issuer, label, uri) {
@@ -306,21 +350,15 @@ class AuthenticatorApp {
     if (this.accounts.some(a => a.secret === secret)) return false;
     this.accounts.push({ id: Date.now(), secret, issuer, label, uri, lastUsed: 0 });
     this.applyFiltersAndSort(); this.saveAccounts();
+    this.syncToGithub(); // auto sync on add
     return true;
   }
 
   applyFiltersAndSort() {
     const term = this.searchInput.value.toLowerCase().trim();
-    
-    // Improved Filtering: check both issuer and label
-    let result = this.accounts.filter(a => 
-      a.issuer.toLowerCase().includes(term) || 
-      a.label.toLowerCase().includes(term)
-    );
-
+    let result = this.accounts.filter(a => a.issuer.toLowerCase().includes(term) || a.label.toLowerCase().includes(term));
     const dir = this.sortAscending ? 1 : -1;
 
-    // Improved Sorting logic
     if (this.currentSort === 'name') {
       result.sort((a, b) => {
         const valA = (a.issuer + a.label).toLowerCase();
@@ -332,10 +370,8 @@ class AuthenticatorApp {
     } else if (this.currentSort === 'recent') {
       result.sort((a, b) => ((b.lastUsed || 0) - (a.lastUsed || 0)) * dir);
     } else if (this.currentSort === 'custom') {
-      // custom order usually just means as added, but we respect direction
       if (!this.sortAscending) result.reverse();
     }
-
     this.filteredAccounts = result;
     this.render();
   }
@@ -344,7 +380,7 @@ class AuthenticatorApp {
 
   updateCodes() {
     const progress = ((30 - (Math.floor(Date.now() / 1000) % 30)) / 30) * 100;
-    this.progressBar.style.width = `${progress}%`;
+    if (this.progressBar) this.progressBar.style.width = `${progress}%`;
     document.querySelectorAll('.account-item').forEach(item => {
       const acc = this.accounts.find(a => a.id == item.dataset.id);
       if (acc) {
@@ -355,6 +391,7 @@ class AuthenticatorApp {
   }
 
   render() {
+    if (!this.accountList) return;
     this.accountList.classList.toggle('privacy-enabled', this.privacyMode);
     if (this.filteredAccounts.length === 0) {
       this.accountList.innerHTML = '<div class="empty-state">Nothing found.</div>';
@@ -377,9 +414,9 @@ class AuthenticatorApp {
   }
 
   togglePrivacyMode() { this.privacyMode = !this.privacyMode; chrome.storage.local.set({ privacyMode: this.privacyMode }); this.render(); }
-  showToast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; this.toastContainer.appendChild(t); setTimeout(() => t.remove(), 2500); }
-  showStatus(msg, type) { this.statusMsg.innerText = msg; this.statusMsg.className = `status-message status-${type}`; this.statusMsg.style.display = 'block'; }
-  clearAllAccounts() { this.accounts = []; this.saveAccounts(); this.render(); }
+  showToast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; if (this.toastContainer) this.toastContainer.appendChild(t); setTimeout(() => t.remove(), 2500); }
+  showStatus(msg, type) { if (this.statusMsg) { this.statusMsg.innerText = msg; this.statusMsg.className = `status-message status-${type}`; this.statusMsg.style.display = 'block'; } }
+  clearAllAccounts() { this.accounts = []; this.saveAccounts(); this.render(); this.syncToGithub(); }
   exportVault() {
     if (this.accounts.length === 0) { this.showToast('no data to export'); return; }
     const backupData = JSON.stringify(this.accounts, null, 2);
