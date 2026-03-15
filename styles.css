@@ -175,16 +175,44 @@ h1 {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px;
+  padding: 18px 18px 18px 12px;
   margin-bottom: 12px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1), border 0.2s, background 0.2s;
   cursor: pointer;
   position: relative;
   overflow: hidden;
   animation: slideIn 0.5s ease backwards;
+}
+
+.account-item.dragging {
+  opacity: 0.5;
+  background: var(--glass-heavy);
+  border: 1px dashed var(--primary);
+}
+
+.account-item.drag-over {
+  border-top: 2px solid var(--primary);
+  transform: translateY(2px);
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  padding-right: 8px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.account-item:hover .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 @keyframes slideIn {
@@ -224,6 +252,7 @@ h1 {
   flex-direction: column;
   gap: 4px;
   max-width: 180px;
+  flex-grow: 1;
 }
 
 .account-label {

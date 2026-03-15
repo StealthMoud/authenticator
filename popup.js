@@ -436,6 +436,9 @@ class AuthenticatorApp {
       const displayCode = code.slice(0, 3) + ' ' + code.slice(3);
 
       item.innerHTML = `
+        <div class="drag-handle">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+        </div>
         <div class="account-info">
           <span class="account-label">${acc.label}</span>
           <span class="account-issuer">${acc.issuer}</span>
@@ -447,6 +450,16 @@ class AuthenticatorApp {
           </button>
         </div>
       `;
+
+      // Drag and drop setup (only if no search active)
+      if (!this.searchInput.value) {
+        item.draggable = true;
+        item.addEventListener('dragstart', (e) => this.handleDragStart(e, index));
+        item.addEventListener('dragover', (e) => this.handleDragOver(e));
+        item.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+        item.addEventListener('drop', (e) => this.handleDrop(e, index));
+        item.addEventListener('dragend', () => this.handleDragEnd());
+      }
 
       // Copy code on click (of the item, but not the delete button)
       item.addEventListener('click', (e) => {
@@ -483,6 +496,43 @@ class AuthenticatorApp {
     this.saveAccounts();
     this.render();
     this.showToast('All accounts cleared');
+  }
+
+  // Drag and Drop Handlers
+  handleDragStart(e, index) {
+    this.draggedIdx = index;
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+    return false;
+  }
+
+  handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  handleDrop(e, targetIdx) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (this.draggedIdx !== targetIdx) {
+      const movedItem = this.accounts.splice(this.draggedIdx, 1)[0];
+      this.accounts.splice(targetIdx, 0, movedItem);
+      this.filteredAccounts = [...this.accounts];
+      this.saveAccounts();
+      this.render();
+      this.showToast('Reordered');
+    }
+  }
+
+  handleDragEnd() {
+    const dragging = document.querySelector('.dragging');
+    if (dragging) dragging.classList.remove('dragging');
+    document.querySelectorAll('.account-item').forEach(i => i.classList.remove('drag-over'));
   }
 
   showToast(msg) {
