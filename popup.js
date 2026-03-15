@@ -9,9 +9,9 @@ class AuthenticatorApp {
     this.currentSort = 'custom';
     this.privacyMode = false;
 
-    // Elements
+    // select elements from the dom
     this.accountList = document.getElementById('account-list');
-    this.searchInput = document.getElementById('search-input');
+    this.searchInput = document.getElementById('search-input'); // for filtring accounts
     this.importBtn = document.getElementById('import-btn');
     this.importModal = document.getElementById('import-modal');
     this.closeModalBtn = document.querySelector('.close-modal');
