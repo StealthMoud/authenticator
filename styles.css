@@ -178,6 +178,31 @@ h1 {
   -webkit-backdrop-filter: blur(10px);
 }
 
+.footer-actions {
+  padding: 8px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+#clear-all-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.3s;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+#clear-all-btn:hover {
+  color: var(--danger);
+  background: rgba(244, 63, 94, 0.05);
+}
+
 #search-input:focus {
   border-color: var(--primary);
   background: rgba(17, 24, 39, 0.7);
@@ -301,26 +326,40 @@ h1 {
 }
 
 .delete-btn {
-  background: rgba(244, 63, 94, 0.05);
-  border: 1px solid rgba(244, 63, 94, 0.1);
-  color: var(--danger);
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
   cursor: pointer;
-  padding: 8px;
-  border-radius: 10px;
+  padding: 6px;
+  border-radius: 50%;
   opacity: 0;
-  transform: translateX(10px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(0.8) translateY(-4px);
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(5px);
+  z-index: 5;
 }
 
 .account-item:hover .delete-btn {
   opacity: 1;
-  transform: translateX(0);
+  transform: scale(1) translateY(0);
 }
 
 .delete-btn:hover {
   background: var(--danger);
+  border-color: var(--danger);
   color: white;
-  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+}
+
+.delete-btn svg {
+  width: 12px;
+  height: 12px;
 }
 
 /* Expanding Hover Effect */
