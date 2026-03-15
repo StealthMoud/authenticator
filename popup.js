@@ -22,6 +22,7 @@ class AuthenticatorApp {
     this.clearAllBtn = document.getElementById('clear-all-btn');
     this.privacyBtn = document.getElementById('privacy-btn');
     this.toastContainer = document.getElementById('toast-container');
+    this.gmailBackupBtn = document.getElementById('gmail-backup-btn'); // click for bakcup
 
     this.init();
   }
@@ -57,6 +58,11 @@ class AuthenticatorApp {
 
     // Privacy Mode
     this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
+
+    // Gmail Backup
+    if (this.gmailBackupBtn) {
+      this.gmailBackupBtn.addEventListener('click', () => this.backupToGmail());
+    }
 
     // Sorting
     document.querySelectorAll('.sort-chip').forEach(chip => {
@@ -610,6 +616,28 @@ class AuthenticatorApp {
     `;
     this.toastContainer.appendChild(toast);
     setTimeout(() => toast.remove(), 2800);
+  }
+
+  // send data to gmail draft
+  backupToGmail() {
+    if (this.accounts.length === 0) {
+      this.showToast('No data to backup');
+      return;
+    }
+
+    const backupData = JSON.stringify(this.accounts, null, 2);
+    const subject = encodeURIComponent('Authenticator Backup - ' + new Date().toLocaleDateString());
+    const body = encodeURIComponent(
+      'IMPORTANT: Keep this email secure. It contains your 2FA secrets.\n\n' +
+      'To restore, copy the JSON below:\n\n' +
+      backupData
+    );
+
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`;
+    
+    // open in new tab for user to send
+    window.open(gmailUrl, '_blank');
+    this.showToast('Gmail draft opened');
   }
 }
 
