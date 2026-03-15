@@ -59,9 +59,9 @@ class AuthenticatorApp {
     // Privacy Mode
     this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
 
-    // Gmail Backup
+    // Data Export
     if (this.gmailBackupBtn) {
-      this.gmailBackupBtn.addEventListener('click', () => this.backupToGmail());
+      this.gmailBackupBtn.addEventListener('click', () => this.exportVault());
     }
 
     // Sorting
@@ -619,7 +619,7 @@ class AuthenticatorApp {
   }
 
   // export accounts to a file
-  backupToGmail() {
+  exportVault() {
     if (this.accounts.length === 0) {
       this.showToast('No data to export');
       return;
