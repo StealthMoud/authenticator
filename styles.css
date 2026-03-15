@@ -317,6 +317,13 @@ h1 {
   box-shadow: 0 20px 40px -15px rgba(0,0,0,0.6);
 }
 
+.account-item:hover .account-label,
+.account-item:hover .account-issuer {
+  white-space: normal;
+  overflow: visible;
+  word-break: break-all;
+}
+
 .account-info {
   display: flex;
   flex-direction: column;
