@@ -6,12 +6,12 @@ class AuthenticatorApp {
     this.filteredAccounts = [];
     this.timerInterval = null;
     this.storageKey = 'authenticator_accounts';
+    this.currentSort = 'custom';
 
     // Elements
     this.accountList = document.getElementById('account-list');
     this.searchInput = document.getElementById('search-input');
     this.importBtn = document.getElementById('import-btn');
-    this.addFirstBtn = document.getElementById('add-first-btn');
     this.importModal = document.getElementById('import-modal');
     this.closeModalBtn = document.querySelector('.close-modal');
     this.dropZone = document.getElementById('drop-zone');
@@ -28,7 +28,7 @@ class AuthenticatorApp {
     await this.loadAccounts();
     this.setupEventListeners();
     this.startTimer();
-    this.render();
+    this.applyFiltersAndSort();
   }
 
   async loadAccounts() {
@@ -50,14 +50,16 @@ class AuthenticatorApp {
   }
 
   setupEventListeners() {
-    // Search
-    this.searchInput.addEventListener('input', (e) => {
-      const term = e.target.value.toLowerCase();
-      this.filteredAccounts = this.accounts.filter(acc => 
-        (acc.issuer && acc.issuer.toLowerCase().includes(term)) || 
-        (acc.label && acc.label.toLowerCase().includes(term))
-      );
-      this.render();
+    this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
+
+    // Sorting
+    document.querySelectorAll('.sort-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('active'));
+        e.target.classList.add('active');
+        this.currentSort = e.target.dataset.sort;
+        this.applyFiltersAndSort();
+      });
     });
 
     // Clear All
@@ -73,9 +75,8 @@ class AuthenticatorApp {
 
     // Modal
     const toggleModal = () => this.importModal.classList.toggle('hidden');
-    this.importBtn.addEventListener('click', toggleModal);
-    this.addFirstBtn.addEventListener('click', toggleModal);
-    this.closeModalBtn.addEventListener('click', toggleModal);
+    if (this.importBtn) this.importBtn.addEventListener('click', toggleModal);
+    if (this.closeModalBtn) this.closeModalBtn.addEventListener('click', toggleModal);
     
     window.addEventListener('click', (e) => {
       if (e.target === this.importModal) toggleModal();
@@ -220,11 +221,12 @@ class AuthenticatorApp {
 
   addAccount(secret, issuer, label, uri) {
     const newAccount = {
-      id: Date.now().toString(),
+      id: Date.now(),
       uri: uri,
       issuer: issuer,
       label: label,
-      secret: secret
+      secret: secret,
+      lastUsed: 0
     };
 
     // Check for duplicates
@@ -234,10 +236,32 @@ class AuthenticatorApp {
     }
 
     this.accounts.push(newAccount);
-    this.filteredAccounts = [...this.accounts];
+    this.applyFiltersAndSort();
     this.saveAccounts();
-    this.render();
     return true;
+  }
+
+  applyFiltersAndSort() {
+    const term = this.searchInput.value.toLowerCase();
+    
+    // Filter
+    let result = this.accounts.filter(acc => 
+      (acc.issuer && acc.issuer.toLowerCase().includes(term)) || 
+      (acc.label && acc.label.toLowerCase().includes(term))
+    );
+
+    // Sort
+    if (this.currentSort === 'name') {
+      result.sort((a, b) => (a.issuer || '').localeCompare(b.issuer || ''));
+    } else if (this.currentSort === 'newest') {
+      result.sort((a, b) => b.id - a.id);
+    } else if (this.currentSort === 'recent') {
+      result.sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0));
+    }
+    // 'custom' does not need explicit sorting as it follows this.accounts order
+
+    this.filteredAccounts = result;
+    this.render();
   }
 
   closeModalDelayed() {
@@ -381,7 +405,7 @@ class AuthenticatorApp {
     const items = document.querySelectorAll('.account-item');
     items.forEach(item => {
       const id = item.dataset.id;
-      const account = this.accounts.find(a => a.id === id);
+      const account = this.accounts.find(a => a.id == id);
       if (account) {
         const totp = new OTPAuth.TOTP({
             issuer: account.issuer,
@@ -467,6 +491,10 @@ class AuthenticatorApp {
         
         navigator.clipboard.writeText(code);
         
+        // Update last used
+        acc.lastUsed = Date.now();
+        this.saveAccounts();
+
         // Visual feedback on the code itself
         const otpDisplay = item.querySelector('.account-otp');
         otpDisplay.style.transition = 'none';
@@ -496,10 +524,9 @@ class AuthenticatorApp {
   }
 
   deleteAccount(id) {
-    this.accounts = this.accounts.filter(a => a.id !== id);
-    this.filteredAccounts = this.filteredAccounts.filter(a => a.id !== id);
+    this.accounts = this.accounts.filter(a => a.id != id);
+    this.applyFiltersAndSort();
     this.saveAccounts();
-    this.render();
     this.showToast('Account removed');
   }
 
@@ -535,9 +562,15 @@ class AuthenticatorApp {
     if (this.draggedIdx !== targetIdx) {
       const movedItem = this.accounts.splice(this.draggedIdx, 1)[0];
       this.accounts.splice(targetIdx, 0, movedItem);
-      this.filteredAccounts = [...this.accounts];
+      
+      // Switch to custom sort after manual reorder
+      this.currentSort = 'custom';
+      document.querySelectorAll('.sort-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.sort === 'custom');
+      });
+
+      this.applyFiltersAndSort();
       this.saveAccounts();
-      this.render();
       this.showToast('Reordered');
     }
   }
