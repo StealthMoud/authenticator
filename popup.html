@@ -52,25 +52,28 @@
       <div class="modal-content">
         <button class="close-modal">&times;</button>
         
-        <!-- GitHub Config -->
+        <!-- GitHub Config with Humanized, Multi-step Instructions -->
         <div id="github-config" class="hidden">
-          <h3>GitHub Sync Config</h3>
-          <p class="config-help" style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 12px; line-height: 1.4;">
-            1. Create a <b>Private</b> repo on GitHub (e.g., 'vault').<br>
-            2. Go to Github > Settings > Developer > PATs (classic).<br>
-            3. Genrate token with 'repo' scope.<br>
-            4. Paste it below to start sync.
-          </p>
-          <input type="password" id="gh-token" placeholder="Personal Access Token">
+          <h3>Cloud Sync Setup</h3>
+          <div class="config-help" style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 16px; line-height: 1.5; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 12px; border-left: 3px solid var(--primary);">
+            <b>1. Create Repo:</b> Go to Github and make a <b>Private</b> repository (e.g., <code>vault</code>).<br>
+            <b>2. Find Settings:</b> Top-right Profile > <b>Settings</b> > <b>Developer settings</b> (bottom left).<br>
+            <b>3. Get Token:</b> <b>Personal access tokens</b> > <b>Tokens (classic)</b>.<br>
+            <b>4. Configure:</b> <b>Generate new token (classic)</b>. Name it "Sync" and check the <b>[x] repo</b> checkbox.<br>
+            <b>5. Finish:</b> Scroll down, click <b>Generate token</b>, copy it, and paste here.
+          </div>
+          
+          <input type="password" id="gh-token" placeholder="Paste Token here (ghp_...)">
           <!-- pushed change -->
           <input type="text" id="gh-repo" placeholder="username/authenticator-vault">
-          <button id="save-gh-config" class="btn-premium">Save Vault Config</button>
-          <hr style="margin: 15px 0; opacity: 0.1;">
+          
+          <button id="save-gh-config" class="btn-premium">Link Cloud Vault</button>
+          <hr style="margin: 18px 0; opacity: 0.1; border: none; height: 1px; background: white;">
         </div>
 
         <div id="import-main-view">
           <h2>Import Account</h2>
-          <p>Upload a QR code or fetch from your cloud vault.</p>
+          <p>Scan a QR code or fetch from your cloud vault.</p>
           
           <div id="drop-zone" class="drop-zone">
             <div class="drop-zone-icon">
@@ -84,8 +87,8 @@
 
           <div id="github-restore-section" style="margin-top: 20px;">
             <button id="fetch-github-btn" class="btn-premium">Fetch from GitHub</button>
-            <div id="github-accounts-list" style="margin-top:10px; max-height:180px; overflow-y:auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
-            <button id="import-all-github" class="btn-premium hidden" style="margin-top:12px; background: var(--accent);">Import All Accounts</button>
+            <div id="github-accounts-list" style="margin-top:10px; max-height:160px; overflow-y:auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            <button id="import-all-github" class="btn-premium hidden" style="margin-top:12px; background: var(--accent);">Import Everything</button>
           </div>
         </div>
       </div>
