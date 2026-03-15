@@ -248,25 +248,36 @@ h1 {
 /* Sorting chips */
 .sort-container {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 12px;
+  gap: 8px;
+}
+
+.sort-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
 }
 
 .sort-chip {
   background: var(--bg-card);
   border: 1px solid var(--border-glass);
   color: var(--text-dim);
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 100px;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .sort-chip:hover {
-  background: var(--glass-heavy);
+  background: rgba(255, 255, 255, 0.05);
   color: white;
 }
 
@@ -275,6 +286,13 @@ h1 {
   border-color: var(--primary);
   color: white;
   box-shadow: 0 4px 12px var(--primary-glow);
+}
+
+#sort-order-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 /* Account List Context */
