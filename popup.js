@@ -19,6 +19,7 @@ class AuthenticatorApp {
     this.statusMsg = document.getElementById('import-status');
     this.progressBar = document.getElementById('global-timer');
     this.clearAllBtn = document.getElementById('clear-all-btn');
+    this.toastContainer = document.getElementById('toast-container');
 
     this.init();
   }
@@ -391,7 +392,11 @@ class AuthenticatorApp {
             secret: account.secret
         });
         const code = totp.generate();
-        item.querySelector('.account-otp').textContent = code.slice(0, 3) + ' ' + code.slice(3);
+        const codeEl = item.querySelector('.account-otp');
+        const newCode = code.slice(0, 3) + ' ' + code.slice(3);
+        if (codeEl.textContent !== newCode) {
+          codeEl.textContent = newCode;
+        }
       }
     });
   }
@@ -413,10 +418,11 @@ class AuthenticatorApp {
     }
 
     this.accountList.innerHTML = '';
-    this.filteredAccounts.forEach(acc => {
+    this.filteredAccounts.forEach((acc, index) => {
       const item = document.createElement('div');
       item.className = 'account-item';
       item.dataset.id = acc.id;
+      item.style.animationDelay = `${index * 0.05}s`;
       
       const totp = new OTPAuth.TOTP({
           issuer: acc.issuer,
@@ -480,41 +486,14 @@ class AuthenticatorApp {
   }
 
   showToast(msg) {
-    // Simple toast implementation
     const toast = document.createElement('div');
-    toast.style.cssText = `
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--primary);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      animation: fadeInOut 2s ease forwards;
+    toast.className = 'toast';
+    toast.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>${msg}</span>
     `;
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    
-    // Add animation style if not exists
-    if (!document.getElementById('toast-style')) {
-      const style = document.createElement('style');
-      style.id = 'toast-style';
-      style.textContent = `
-        @keyframes fadeInOut {
-          0% { opacity: 0; transform: translate(-50%, 10px); }
-          15% { opacity: 1; transform: translate(-50%, 0); }
-          85% { opacity: 1; transform: translate(-50%, 0); }
-          100% { opacity: 0; transform: translate(-50%, -10px); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    setTimeout(() => toast.remove(), 2000);
+    this.toastContainer.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
   }
 }
 
