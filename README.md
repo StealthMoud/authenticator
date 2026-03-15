@@ -1,40 +1,48 @@
 # Authenticator
 
-A premium, secure, and beautiful Chrome extension for managing your two-factor authentication (2FA) codes. Built with a focus on privacy and high-end user experience.
+A premium, secure, and beautiful Chrome extension for managing your two-factor authentication (2FA) codes. Built with a focus on privacy and elite-tier user experience.
 
-![Authenticator UI](screenshot.png)
+## ✨ Key Features
 
-## Features
+- **Elite UI/UX**: State-of-the-art glassmorphism design with mesh gradients, backdrop blurs, and reactive hover animations.
+- **Autonomous Cloud Sync**: Real-time synchronization to a private GitHub repository. Never lose your 2FA seeds again.
+- **Multi-Profile Mastery**: Automatic detection of Chrome profile identities. Sync separate vaults for work, personal, and secondary accounts under one GitHub repo.
+- **Privacy Mode**: One-click masking of sensitive labels and OTP codes for secure usage in public spaces.
+- **Dynamic Sorting & Filtering**:
+  - **Smart Name Sort**: Intelligent alphabetical grouping by issuer and account label.
+  - **A-Z/Z-A Toggle**: Flip sorting direction instantly with a dedicated order toggle.
+  - **Usage Based**: Automatically prioritizes your most frequently accessed codes.
+- **Intelligent Recovery**:
+  - **Cloud Fetch**: Scan your entire GitHub vault and selectively import accounts from any profile found.
+  - **Bulk Merge**: One-click restoration of all cloud-synced accounts into your current profile.
+- **Local Resilience**: Export your entire vault to a local JSON file for offline backups.
 
-- **Elite UI**: Modern glassmorphism design with mesh gradients and smooth micro-interactions.
-- **Privacy Mode**: One-click masking of sensitive emails and codes for secure use in public.
-- **Advanced QR Scanning**: Robust detection engine capable of reading high-density QR codes from images and screenshots (up to 2500px).
-- **Drag-and-Drop Reordering**: Intuitively organize your accounts exactly how you want them.
-- **Smart Sorting**: 
-  - **Custom**: Your manual reorder.
-  - **Name**: Alphabetical sorting by issuer.
-  - **Newest**: Recently added accounts first.
-  - **Used**: Puts your most frequently/recently copied codes at the top.
-- **Secure Local Storage**: All secrets are stored locally in your browser using `chrome.storage.local`. No data ever leaves your device.
-- **Google Authenticator Support**: Supports importing Google Authenticator migration QR codes.
-- **Fast Search**: Instant filtering for large account lists.
-
-## Installation
+## 🚀 Installation
 
 1. Download or clone this repository.
 2. Open Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** in the top right corner.
 4. Click **Load unpacked** and select the extension folder.
 
-## Usage
+## ☁️ Cloud Sync Setup
 
-- **Add Account**: Click the `+` icon in the header to upload or drop a QR code image.
-- **Copy Code**: Click anywhere on an account card to copy the current 6-digit code.
-- **Privacy**: Click the Eye icon to mask/unmask your data.
-- **Reorder**: Use the drag handle on the left of any card to move it.
-- **Remove**: Hover over a card and click the `X` in the top right to remove an individual account.
-- **Reset**: Use the "Reset Authenticator" action in the footer to clear all data.
+1. Create a **Private** repository on GitHub (e.g., `authenticator-vault`).
+2. Generate a **Personal Access Token (classic)** with the `repo` scope.
+3. Open the **Cloud Sync** panel in the app and paste your token and repository path (`username/repo`).
+4. The app will automatically sync your accounts and provide a persistent alert if the connection ever fails.
 
-## Security
+## 🛠️ Usage
 
-This extension is built to be private by design. It requires no external network access and stores all sensitive authentication secrets encrypted within the browser's local storage.
+- **Add Account**: Click the `+` icon to upload or drop a QR code image.
+- **Copy Code**: Click an account card to copy the TOTP code. The item will expand on hover to show full details.
+- **Sync**: Click **Cloud Sync** in the footer to manage your GitHub vault.
+- **Privacy**: Use the Eye icon to mask/unmask your vault data instantly.
+- **Export**: Use **Export File** to save a local backup of your secrets.
+- **Reset**: Purge all local data using the **Reset Vault** action.
+
+## 🔒 Security
+
+Privacy is the core pillar of this extension.
+- **Local First**: All data is stored in `chrome.storage.local`.
+- **Private Cloud**: Synchronization uses your own private GitHub infrastructure—no third-party servers see your secrets.
+- **Isolated Profiles**: Data from different Chrome profiles is saved in distinct files to prevent cross-contamination.
