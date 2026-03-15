@@ -137,12 +137,6 @@ h1 {
   box-shadow: 0 4px 20px -5px var(--primary);
 }
 
-.header-actions button.secondary-btn:hover {
-  background: var(--danger);
-  box-shadow: 0 4px 20px -5px var(--danger);
-  border-color: rgba(255,255,255,0.2);
-}
-
 /* Search Area */
 .search-container {
   padding: 0 24px 16px;
@@ -178,39 +172,60 @@ h1 {
   -webkit-backdrop-filter: blur(10px);
 }
 
+#search-input:focus {
+  border-color: var(--primary);
+  background: rgba(17, 24, 39, 0.7);
+  box-shadow: 0 0 0 1px var(--primary);
+  padding-left: 48px;
+}
+
+#search-input:focus + .search-icon {
+  color: var(--primary);
+  left: 16px;
+}
+
+/* Footer Actions Area */
 .footer-actions {
-  padding: 16px 24px;
+  padding: 16px 20px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 8px;
   z-index: 20;
 }
 
 .btn-action {
-  height: 44px;
+  height: 52px;
+  padding: 0 4px;
   border-radius: var(--radius-md);
   border: 1px solid var(--border-glass);
   font-family: var(--font);
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   font-weight: 700;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px;
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  color: var(--text-main);
+  color: var(--text-dim);
+}
+
+.btn-action svg {
+  width: 18px;
+  height: 18px;
+  opacity: 0.8;
 }
 
 .btn-primary {
   background: var(--bg-card);
-  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .btn-primary:hover {
   background: var(--primary);
+  color: white;
   border-color: var(--primary);
   box-shadow: 0 4px 15px -2px var(--primary-glow);
   transform: translateY(-2px);
@@ -230,10 +245,7 @@ h1 {
   transform: translateY(-2px);
 }
 
-.btn-action svg {
-  opacity: 0.8;
-}
-
+/* Sorting chips */
 .sort-container {
   display: flex;
   flex-wrap: wrap;
@@ -265,18 +277,6 @@ h1 {
   box-shadow: 0 4px 12px var(--primary-glow);
 }
 
-#search-input:focus {
-  border-color: var(--primary);
-  background: rgba(17, 24, 39, 0.7);
-  box-shadow: 0 0 0 1px var(--primary);
-  padding-left: 48px;
-}
-
-#search-input:focus + .search-icon {
-  color: var(--primary);
-  left: 16px;
-}
-
 /* Account List Context */
 .account-list {
   padding: 4px 24px 24px;
@@ -285,7 +285,7 @@ h1 {
   z-index: 10;
 }
 
-/* Account Card - The Premium Glass Piece */
+/* Account Card */
 .account-item {
   background: var(--bg-card);
   background-image: var(--glass-reflection);
@@ -317,42 +317,12 @@ h1 {
   box-shadow: 0 20px 40px -15px rgba(0,0,0,0.6);
 }
 
-/* Visual Glow behind card on hover */
-.account-item::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-  transition: 0.5s;
-}
-
-.account-item:hover::after {
-  left: 100%;
-}
-
-.drag-handle {
-  color: var(--text-muted);
-  cursor: grab;
-  padding: 8px 4px;
-  display: flex;
-  align-items: center;
-  transition: color 0.3s;
-}
-
-.account-item:hover .drag-handle {
-  color: var(--text-dim);
-}
-
 .account-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
   flex: 1;
   min-width: 0;
-  transition: all 0.4s ease;
 }
 
 .account-label {
@@ -387,101 +357,6 @@ h1 {
   filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
 }
 
-.delete-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border-glass);
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
-  opacity: 0;
-  transform: scale(0.8) translateY(-4px);
-  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(5px);
-  z-index: 5;
-}
-
-.account-item:hover .delete-btn {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-
-.delete-btn:hover {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: white;
-  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
-}
-
-.delete-btn svg {
-  width: 12px;
-  height: 12px;
-}
-
-/* Expanding Hover Effect */
-.account-item:hover .account-info span {
-  white-space: normal;
-  overflow: visible;
-  word-break: break-all;
-}
-
-/* Empty State - Premium Onboarding Look */
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 40px;
-  text-align: center;
-}
-
-.empty-icon {
-  width: 100px;
-  height: 100px;
-  background: linear-gradient(135deg, var(--bg-card), var(--glass));
-  border-radius: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary);
-  margin-bottom: 24px;
-  border: 1px solid var(--border-glass);
-  transform: rotate(-5deg);
-  box-shadow: var(--shadow-premium);
-}
-
-.empty-state p {
-  color: var(--text-dim);
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin-bottom: 32px;
-}
-
-#render-add-btn {
-  background: linear-gradient(135deg, var(--primary), var(--secondary));
-  color: white;
-  border: none;
-  padding: 16px 36px;
-  border-radius: var(--radius-lg);
-  font-family: var(--font);
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.4s;
-  box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
-}
-
-#render-add-btn:hover {
-  transform: translateY(-4px) scale(1.05);
-  box-shadow: 0 15px 30px -5px rgba(99, 102, 241, 0.6);
-}
-
 /* Modal - Ultra Glass */
 .modal {
   position: fixed;
@@ -491,35 +366,33 @@ h1 {
   height: 100%;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Start from top to avoid clipping */
   justify-content: center;
   z-index: 100;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  overflow-y: auto; /* allow modal scroll */
+  padding: 40px 0;
 }
 
 .modal-content {
   background: var(--bg-modal);
   background-image: var(--glass-reflection);
-  width: 330px;
-  padding: 40px 30px;
+  width: 340px;
+  padding: 30px;
   border-radius: 35px;
   position: relative;
   border: 1px solid var(--border-bright);
   box-shadow: 0 40px 100px rgba(0,0,0,0.8);
-  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes modalPop {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  margin-top: auto;
+  margin-bottom: auto; /* center if fits, else align-start does its job */
 }
 
 .close-modal {
   position: absolute;
-  top: 24px;
-  right: 24px;
-  background: var(--glass-heavy);
+  top: 16px;
+  right: 16px;
+  background: var(--bg-card);
   border: 1px solid var(--border-glass);
   color: var(--text-dim);
   width: 34px;
@@ -538,92 +411,96 @@ h1 {
   transform: rotate(90deg);
 }
 
-.modal h2 {
+.modal h2, .modal h3 {
   margin-bottom: 12px;
-  font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
 
 .modal p {
   color: var(--text-dim);
-  font-size: 0.95rem;
-  margin-bottom: 28px;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
   line-height: 1.5;
 }
 
+/* Config Section Styles */
+.config-help {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--primary);
+  margin-bottom: 12px;
+}
+
+#github-config input {
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: white;
+  margin-bottom: 10px;
+}
+
+/* Drop Zone */
 .drop-zone {
   border: 2px dashed var(--border-glass);
   border-radius: var(--radius-xl);
-  padding: 60px 20px;
+  padding: 40px 20px;
   text-align: center;
-  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-  background: rgba(255, 255, 255, 0.01);
+  cursor: pointer;
+  transition: all 0.4s;
 }
 
-.drop-zone:hover {
+.drop-zone:hover, .drop-zone.dragover {
   border-color: var(--primary);
   background: rgba(99, 102, 241, 0.05);
-  transform: scale(1.02);
-}
-
-.drop-zone.dragover {
-  border-color: var(--accent);
-  background: rgba(34, 197, 94, 0.05);
-  transform: scale(1.02);
 }
 
 .drop-zone-icon {
   color: var(--primary);
-  margin-bottom: 20px;
-  filter: drop-shadow(0 0 15px var(--primary-glow));
+  margin-bottom: 12px;
 }
 
+/* Premium Buttons in Modal */
+.btn-premium {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-family: var(--font);
+  font-weight: 700;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -5px var(--primary);
+}
+
+/* Status & Toast */
 .status-message {
-  margin-top: 24px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: var(--radius-md);
   text-align: center;
-  padding: 12px;
-  border-radius: 12px;
-  display: none;
+  font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .status-success { color: var(--accent); background: rgba(34, 197, 94, 0.1); }
 .status-error { color: var(--danger); background: rgba(244, 63, 94, 0.1); }
 
-/* Progress Bar - Animated Glow */
-footer {
-  position: relative;
-  z-index: 20;
-}
-
-.progress-container {
-  height: 5px;
-  background: rgba(255,255,255,0.05);
-  width: 100%;
-  overflow: hidden;
-}
-
-.progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--secondary));
-  width: 100%;
-  transition: width 1s linear;
-  box-shadow: 0 0 10px var(--primary);
-}
-
-/* Toast System */
 #toast-container {
   position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  pointer-events: none;
 }
 
 .toast {
@@ -631,52 +508,27 @@ footer {
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   color: white;
-  padding: 14px 24px;
+  padding: 12px 24px;
   border-radius: 100px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  margin-top: 8px;
   border: 1px solid var(--border-bright);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  animation: toastIn 0.5s cubic-bezier(0.23, 1, 0.32, 1) forwards,
-             toastOut 0.5s cubic-bezier(0.23, 1, 0.32, 1) 2.2s forwards;
 }
 
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.9); filter: blur(10px); }
-  to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+/* Progress bar */
+.progress-container {
+  height: 4px;
+  background: rgba(255,255,255,0.05);
+  width: 100%;
 }
 
-@keyframes toastOut {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(-30px) scale(0.85); filter: blur(10px); }
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  width: 0%;
+  transition: width 1s linear;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-glass) ; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-/* Utility Classes */
 .hidden { display: none !important; }
-.dragging { opacity: 0.4; }
-.drag-over { border-top: 2px solid var(--primary); }
-
-/* Privacy Mode */
-.privacy-enabled .account-label,
-.privacy-enabled .account-otp {
-  filter: blur(8px);
-  transition: filter 0.3s ease;
-  user-select: none;
-  pointer-events: none;
-}
-
-#privacy-btn.active {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-  box-shadow: 0 0 15px var(--primary-glow);
-}
+.privacy-enabled .account-otp { filter: blur(8px); }

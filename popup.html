@@ -19,7 +19,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-open"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="eye-closed hidden"><path d="M9.88 9.88 3.59 3.59"/><path d="m21 21-6.41-6.41"/><path d="M2 12s3-7 10-7a9.77 9.77 0 0 1 5 1.36"/><path d="M22 12s-3 7-10 7a9.77 9.77 0 0 1-5-1.36"/><path d="m15 10.34a3.36 3.36 0 0 0-4.66 0"/><path d="m9.17 14.83a3.36 3.36 0 0 0 4.66 0"/></svg>
         </button>
-        <button id="import-btn" title="Import QR Code">
+        <button id="import-btn" title="Import Content">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
         </button>
       </div>
@@ -39,7 +39,6 @@
     </div>
 
     <main id="account-list" class="account-list">
-      <!-- Accounts will be rendered here -->
       <div class="empty-state">
         <div class="empty-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
@@ -52,46 +51,55 @@
     <div id="import-modal" class="modal hidden">
       <div class="modal-content">
         <button class="close-modal">&times;</button>
-        <div id="github-config" class="hidden"> 
-          <h3>GitHub Config</h3> 
-          <input type="password" id="gh-token" placeholder="Personal Access Token"> 
-          <input type="text" id="gh-repo" placeholder="username/repo"> 
-          <button id="save-gh-config" class="btn-premium">Save Config</button> 
-        </div> 
-
-        <h2>Import Account</h2>
-        <p>Upload a QR code image exported from your authenticator app.</p>
-        <div id="drop-zone" class="drop-zone">
-          <div class="drop-zone-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-          </div>
-          <p>Drop QR image here or click to upload</p>
-          <input type="file" id="file-input" accept="image/*" hidden>
+        
+        <!-- GitHub Config -->
+        <div id="github-config" class="hidden">
+          <h3>GitHub Sync Config</h3>
+          <p class="config-help" style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 12px; line-height: 1.4;">
+            1. Go to Github > Settings > Developer > PATs (classic).<br>
+            2. Genrate token with 'repo' scope.<br>
+            3. Paste it below to start sync.
+          </p>
+          <input type="password" id="gh-token" placeholder="Personal Access Token">
+          <input type="text" id="gh-repo" placeholder="username/repository-name">
+          <button id="save-gh-config" class="btn-premium">Save Vault Config</button>
+          <hr style="margin: 15px 0; opacity: 0.1;">
         </div>
-        <div id="import-status" class="status-message"></div>
-        <div id="github-restore" class="hidden" style="margin-top:20px"> 
-          <h3>Restore from GitHub</h3> 
-          <button id="fetch-github-btn" class="btn-premium">Fetch Vault</button> 
-          <div id="github-accounts-list" style="margin-top:10px; max-height:200px; overflow-y:auto"></div> 
-        </div> 
 
-        <button id="import-all-github" class="btn-premium hidden" style="margin-top:10px">Import All from GitHub</button> 
+        <div id="import-main-view">
+          <h2>Import Account</h2>
+          <p>Upload a QR code or fetch from your cloud vault.</p>
+          
+          <div id="drop-zone" class="drop-zone">
+            <div class="drop-zone-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            </div>
+            <p>Drop QR image here or click</p>
+            <input type="file" id="file-input" accept="image/*" hidden>
+          </div>
+          
+          <div id="import-status" class="status-message"></div>
 
+          <div id="github-restore-section" style="margin-top: 20px;">
+            <button id="fetch-github-btn" class="btn-premium">Fetch from GitHub</button>
+            <div id="github-accounts-list" style="margin-top:10px; max-height:180px; overflow-y:auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+            <button id="import-all-github" class="btn-premium hidden" style="margin-top:12px; background: var(--accent);">Import All Accounts</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <footer>
       <div class="footer-actions">
-        <button id="github-backup-btn" class="btn-action btn-primary"> 
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg> 
-          GitHub Sync 
-        </button> 
-
-        <button id="gmail-backup-btn" class="btn-action btn-primary">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-          Export Data
+        <button id="github-sync-btn" class="btn-action btn-primary" title="Sync with GitHub">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+          Cloud Sync
         </button>
-        <button id="clear-all-btn" class="btn-action btn-danger">
+        <button id="export-vault-btn" class="btn-action btn-primary" title="Export to File">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          Export File
+        </button>
+        <button id="clear-all-btn" class="btn-action btn-danger" title="Clear all data">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/><path d="M15 21V9"/></svg>
           Reset Vault
         </button>

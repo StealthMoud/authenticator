@@ -9,9 +9,9 @@ class AuthenticatorApp {
     this.currentSort = 'custom';
     this.privacyMode = false;
 
-    // select elements from the dom
+    // cache dom elements for faster access
     this.accountList = document.getElementById('account-list');
-    this.searchInput = document.getElementById('search-input'); // for filtring accounts
+    this.searchInput = document.getElementById('search-input');
     this.importBtn = document.getElementById('import-btn');
     this.importModal = document.getElementById('import-modal');
     this.closeModalBtn = document.querySelector('.close-modal');
@@ -22,22 +22,13 @@ class AuthenticatorApp {
     this.clearAllBtn = document.getElementById('clear-all-btn');
     this.privacyBtn = document.getElementById('privacy-btn');
     this.toastContainer = document.getElementById('toast-container');
-    this.gmailBackupBtn = document.getElementById('gmail-backup-btn'); // click for bakcup
-    this.githubSyncBtn = document.getElementById("github-backup-btn"); 
-
+    this.githubSyncBtn = document.getElementById('github-sync-btn');
+    this.exportVaultBtn = document.getElementById('export-vault-btn');
+    this.saveGhConfigBtn = document.getElementById('save-gh-config');
+    this.fetchGithubBtn = document.getElementById('fetch-github-btn');
+    this.importAllGhBtn = document.getElementById('import-all-github');
 
     this.init();
-    document.getElementById("save-gh-config").addEventListener("click", () => { 
-    document.getElementById("fetch-github-btn").addEventListener("click", () => this.fetchFromGithub()); 
-
-      const token = document.getElementById("gh-token").value; 
-      const repo = document.getElementById("gh-repo").value; 
-      chrome.storage.local.set({ ghToken: token, ghRepo: repo }, () => { 
-        document.getElementById("github-config").classList.add("hidden"); 
-        this.showToast("config saved"); 
-      }); 
-    }); 
-
   }
 
   async init() {
@@ -69,15 +60,16 @@ class AuthenticatorApp {
   setupEventListeners() {
     this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
 
-    // Privacy Mode
+    // privacy and visibility
     this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
 
-    // Data Export
-    if (this.gmailBackupBtn) {
-      this.gmailBackupBtn.addEventListener('click', () => this.exportVault());
-    }
+    // buttons listeners
+    if (this.exportVaultBtn) this.exportVaultBtn.addEventListener('click', () => this.exportVault());
+    if (this.githubSyncBtn) this.githubSyncBtn.addEventListener('click', () => this.syncToGithub());
+    if (this.saveGhConfigBtn) this.saveGhConfigBtn.addEventListener('click', () => this.saveGithubConfig());
+    if (this.fetchGithubBtn) this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
 
-    // Sorting
+    // sorting chips
     document.querySelectorAll('.sort-chip').forEach(chip => {
       chip.addEventListener('click', (e) => {
         document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('active'));
@@ -87,19 +79,22 @@ class AuthenticatorApp {
       });
     });
 
-    // Clear All
+    // clear vault
     this.clearAllBtn.addEventListener('click', () => {
       if (this.accounts.length === 0) {
-        this.showToast('No accounts to clear');
+        this.showToast('no data to clear');
         return;
       }
-      if (confirm('Are you sure you want to remove ALL accounts? This cannot be undone.')) {
+      if (confirm('pruge all data? u cant undo this!')) {
         this.clearAllAccounts();
       }
     });
 
-    // Modal
-    const toggleModal = () => this.importModal.classList.toggle('hidden');
+    // modal controls
+    const toggleModal = () => {
+      this.importModal.classList.toggle('hidden');
+      document.getElementById('github-config').classList.add('hidden'); // hide config on close
+    };
     if (this.importBtn) this.importBtn.addEventListener('click', toggleModal);
     if (this.closeModalBtn) this.closeModalBtn.addEventListener('click', toggleModal);
     
@@ -107,18 +102,15 @@ class AuthenticatorApp {
       if (e.target === this.importModal) toggleModal();
     });
 
-    // File Import
+    // drop n drag for files
     this.dropZone.addEventListener('click', () => this.fileInput.click());
     this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
 
-    // Drag and Drop
     this.dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       this.dropZone.classList.add('dragover');
     });
-    this.dropZone.addEventListener('dragleave', () => {
-      this.dropZone.classList.remove('dragover');
-    });
+    this.dropZone.addEventListener('dragleave', () => this.dropZone.classList.remove('dragover'));
     this.dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       this.dropZone.classList.remove('dragover');
@@ -127,6 +119,99 @@ class AuthenticatorApp {
     });
   }
 
+  // --- github cloud logic ---
+
+  async saveGithubConfig() {
+    const token = document.getElementById('gh-token').value.trim();
+    const repo = document.getElementById('gh-repo').value.trim();
+    
+    if (!token || !repo) {
+      this.showToast('missing fields');
+      return;
+    }
+
+    await chrome.storage.local.set({ ghToken: token, ghRepo: repo });
+    document.getElementById('github-config').classList.add('hidden');
+    this.showToast('config saved sucsesfully');
+    this.syncToGithub(); // trigger sync after save
+  }
+
+  async syncToGithub() {
+    const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
+    
+    if (!ghToken || !ghRepo) {
+      this.importModal.classList.remove('hidden');
+      document.getElementById('github-config').classList.remove('hidden');
+      return;
+    }
+
+    this.showToast('syncing to cloude...');
+    chrome.runtime.sendMessage({ action: 'githubSync', data: this.accounts }, (res) => {
+      if (res && res.success) {
+        this.showToast('vault synched!');
+      } else {
+        this.showToast('sync faild: ' + (res ? res.error : 'timeout'));
+      }
+    });
+  }
+
+  async fetchFromGithub() {
+    const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
+    if (!ghToken || !ghRepo) {
+      this.showToast('setup github first');
+      return;
+    }
+
+    this.showToast('fetching vault...');
+    const url = `https://api.github.com/repos/${ghRepo}/contents/authenticator_backup.json`;
+    
+    try {
+      const res = await fetch(url, { 
+        headers: { 'Authorization': `token ${ghToken}` } 
+      });
+      
+      if (res.ok) {
+        const file = await res.json();
+        const data = JSON.parse(atob(file.content));
+        this.renderGithubRestore(data);
+      } else {
+        this.showToast('count not find backup file');
+      }
+    } catch (e) {
+      this.showToast('network error');
+    }
+  }
+
+  renderGithubRestore(remoteAccounts) {
+    const container = document.getElementById('github-accounts-list');
+    container.innerHTML = '';
+    
+    if (!remoteAccounts || remoteAccounts.length === 0) {
+      container.innerHTML = '<p style="font-size:0.8rem">Vault is empty</p>';
+      return;
+    }
+
+    this.importAllGhBtn.classList.remove('hidden');
+    this.importAllGhBtn.onclick = () => {
+      remoteAccounts.forEach(acc => this.addAccount(acc.secret, acc.issuer, acc.label, acc.uri));
+      this.showToast('imported everyting');
+    };
+
+    remoteAccounts.forEach(acc => {
+      const chip = document.createElement('div');
+      chip.className = 'sort-chip';
+      chip.style.fontSize = '0.7rem';
+      chip.innerText = `${acc.issuer}`;
+      chip.onclick = () => {
+        this.addAccount(acc.secret, acc.issuer, acc.label, acc.uri);
+        this.showToast(`added ${acc.issuer}`);
+      };
+      container.appendChild(chip);
+    });
+  }
+
+  // --- core auth logic ---
+
   handleFileSelect(e) {
     const file = e.target.files[0];
     if (file) this.processFile(file);
@@ -134,84 +219,27 @@ class AuthenticatorApp {
 
   async processFile(file) {
     if (!file || !file.type.startsWith('image/')) {
-      this.showStatus('Please upload a valid image file.', 'error');
+      this.showStatus('Not an image.', 'error');
       return;
     }
 
-    this.showStatus('Processing...', '');
-
+    this.showStatus('Scanning...', '');
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
-      img.onerror = () => this.showStatus('Failed to load image file.', 'error');
       img.onload = () => {
-        try {
-          const runScan = (w, h, data) => {
-            return jsQR(data, Math.floor(w), Math.floor(h), { 
-              inversionAttempts: "dontInvert" 
-            }) || jsQR(data, Math.floor(w), Math.floor(h), { 
-              inversionAttempts: "onlyInvert" 
-            });
-          };
-
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          
-          let width = Math.floor(img.width);
-          let height = Math.floor(img.height);
-          if (width <= 0 || height <= 0) throw new Error('Invalid image size');
-
-          // Try original resolution first (best for dense codes)
-          const maxDim = 2500;
-          if (width > maxDim || height > maxDim) {
-            const ratio = Math.min(maxDim / width, maxDim / height);
-            width = Math.floor(width * ratio);
-            height = Math.floor(height * ratio);
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          const imageData = ctx.getImageData(0, 0, width, height);
-          let codeResult = runScan(width, height, imageData.data);
-
-          // If simple scan fails, try aggressive preprocessing
-          if (!codeResult) {
-            this.showStatus('Deep scanning...', '');
-            
-            // Try different contrast thresholds
-            const thresholds = [128, 160, 100, 200];
-            for (const threshold of thresholds) {
-              const binarizedData = new Uint8ClampedArray(imageData.data);
-              for (let i = 0; i < binarizedData.length; i += 4) {
-                const avg = (binarizedData[i] + binarizedData[i+1] + binarizedData[i+2]) / 3;
-                const val = avg < threshold ? 0 : 255;
-                binarizedData[i] = binarizedData[i+1] = binarizedData[i+2] = val;
-              }
-              codeResult = runScan(width, height, binarizedData);
-              if (codeResult) break;
-            }
-          }
-
-          // Last resort: Grayscale (preserving some detail)
-          if (!codeResult) {
-            const grayData = new Uint8ClampedArray(imageData.data);
-            for (let i = 0; i < grayData.length; i += 4) {
-              const val = (grayData[i] * 0.299 + grayData[i+1] * 0.587 + grayData[i+2] * 0.114);
-              grayData[i] = grayData[i+1] = grayData[i+2] = val;
-            }
-            codeResult = runScan(width, height, grayData);
-          }
-
-          if (codeResult && codeResult.data) {
-            this.handleQRCode(codeResult.data);
-          } else {
-            this.showStatus('Unable to detect QR. Try cropping the code closer.', 'error');
-          }
-        } catch (err) {
-          console.error('Process Error:', err);
-          this.showStatus('Scan failed. Please use a clearer screenshot.', 'error');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, canvas.width, canvas.height);
+        
+        if (code) {
+          this.handleQRCode(code.data);
+        } else {
+          this.showStatus('QR not found.', 'error');
         }
       };
       img.src = e.target.result;
@@ -221,46 +249,23 @@ class AuthenticatorApp {
 
   handleQRCode(uri) {
     try {
-      if (uri.startsWith('otpauth-migration://')) {
-        this.parseMigrationURI(uri);
-        return;
-      }
-
-      if (!uri.startsWith('otpauth://')) {
-        throw new Error('Not a valid OTP URI');
-      }
-
+      if (!uri.startsWith('otpauth://')) throw new Error('invalid');
       const totp = OTPAuth.URI.parse(uri);
-      const added = this.addAccount(totp.secret.base32, totp.issuer || 'Unknown', totp.label || 'Account', uri);
-      
+      const added = this.addAccount(totp.secret.base32, totp.issuer || 'Other', totp.label || 'Login', uri);
       if (added) {
-        this.showStatus('Account added successfully!', 'success');
-        this.closeModalDelayed();
+        this.showStatus('Success!', 'success');
+        setTimeout(() => this.importModal.classList.add('hidden'), 1000);
       }
-
-    } catch (err) {
-      console.error('QR Parse Error:', err);
-      this.showStatus('Unsupported QR format or invalid data.', 'error');
+    } catch (e) {
+      this.showStatus('Format error.', 'error');
     }
   }
 
   addAccount(secret, issuer, label, uri) {
-    const newAccount = {
-      id: Date.now(),
-      uri: uri,
-      issuer: issuer,
-      label: label,
-      secret: secret,
-      lastUsed: 0
-    };
-
-    // Check for duplicates
-    if (this.accounts.some(a => a.secret === newAccount.secret && a.label === newAccount.label)) {
-      this.showStatus('Account already exists.', 'error');
+    if (this.accounts.some(a => a.secret === secret)) {
       return false;
     }
-
-    this.accounts.push(newAccount);
+    this.accounts.push({ id: Date.now(), secret, issuer, label, uri, lastUsed: 0 });
     this.applyFiltersAndSort();
     this.saveAccounts();
     return true;
@@ -268,373 +273,93 @@ class AuthenticatorApp {
 
   applyFiltersAndSort() {
     const term = this.searchInput.value.toLowerCase();
-    
-    // Filter
-    let result = this.accounts.filter(acc => 
-      (acc.issuer && acc.issuer.toLowerCase().includes(term)) || 
-      (acc.label && acc.label.toLowerCase().includes(term))
+    let result = this.accounts.filter(a => 
+      a.issuer.toLowerCase().includes(term) || a.label.toLowerCase().includes(term)
     );
 
-    // Sort
-    if (this.currentSort === 'name') {
-      result.sort((a, b) => (a.issuer || '').localeCompare(b.issuer || ''));
-    } else if (this.currentSort === 'newest') {
-      result.sort((a, b) => b.id - a.id);
-    } else if (this.currentSort === 'recent') {
-      result.sort((a, b) => (b.lastUsed || 0) - (a.lastUsed || 0));
-    }
-    // 'custom' does not need explicit sorting as it follows this.accounts order
-
+    if (this.currentSort === 'name') result.sort((a,b) => a.issuer.localeCompare(b.issuer));
+    if (this.currentSort === 'newest') result.sort((a,b) => b.id - a.id);
+    
     this.filteredAccounts = result;
     this.render();
   }
 
-  closeModalDelayed() {
-    setTimeout(() => {
-      this.importModal.classList.add('hidden');
-      this.statusMsg.textContent = '';
-      this.statusMsg.className = 'status-message';
-    }, 1500);
-  }
-
-  async parseMigrationURI(uri) {
-    try {
-      const url = new URL(uri);
-      const data = url.searchParams.get('data');
-      if (!data) throw new Error('No data param');
-
-      // Manual Protobuf Parsing for Google Authenticator Migration format
-      // Base64 decode
-      const binary = atob(data);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-
-      let pos = 0;
-      let accountsAdded = 0;
-
-      // Outer message is repeated OtpParameters (field 1)
-      while (pos < bytes.length) {
-        const tag = this.readVarint(bytes, pos);
-        pos = tag.next;
-        const fieldNum = tag.value >> 3;
-        const wireType = tag.value & 7;
-
-        if (fieldNum === 1 && wireType === 2) {
-          const len = this.readVarint(bytes, pos);
-          pos = len.next;
-          const end = pos + len.value;
-          
-          let secret, name, issuer;
-          
-          while (pos < end) {
-            const innerTag = this.readVarint(bytes, pos);
-            pos = innerTag.next;
-            const innerFieldNum = innerTag.value >> 3;
-            const innerWireType = innerTag.value & 7;
-            
-            const innerLen = this.readVarint(bytes, pos);
-            pos = innerLen.next;
-            
-            if (innerFieldNum === 1) { // secret
-              const secretBytes = bytes.slice(pos, pos + innerLen.value);
-              secret = this.base32Encode(secretBytes);
-              pos += innerLen.value;
-            } else if (innerFieldNum === 2) { // name
-              name = new TextDecoder().decode(bytes.slice(pos, pos + innerLen.value));
-              pos += innerLen.value;
-            } else if (innerFieldNum === 3) { // issuer
-              issuer = new TextDecoder().decode(bytes.slice(pos, pos + innerLen.value));
-              pos += innerLen.value;
-            } else {
-              pos += innerLen.value;
-            }
-          }
-          
-          if (secret) {
-            if (this.addAccount(secret, issuer || 'Google', name || 'Account', '')) {
-              accountsAdded++;
-            }
-          }
-          pos = end;
-        } else {
-          // Skip other fields
-          if (wireType === 0) pos = this.readVarint(bytes, pos).next;
-          else if (wireType === 2) pos += this.readVarint(bytes, pos).value + this.readVarint(bytes, pos).next - pos;
-          else pos++; // Minimal skip
-        }
-      }
-
-      if (accountsAdded > 0) {
-        this.showStatus(`Imported ${accountsAdded} accounts!`, 'success');
-        this.closeModalDelayed();
-      } else {
-        this.showStatus('No accounts found in migration data.', 'error');
-      }
-
-    } catch (err) {
-      console.error('Migration Parse Error:', err);
-      this.showStatus('Failed to decode migration data.', 'error');
-    }
-  }
-
-  readVarint(bytes, pos) {
-    let value = 0;
-    let shift = 0;
-    while (true) {
-      const b = bytes[pos++];
-      value |= (b & 127) << shift;
-      if (!(b & 128)) break;
-      shift += 7;
-    }
-    return { value, next: pos };
-  }
-
-  base32Encode(bytes) {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-    let bits = 0;
-    let value = 0;
-    let output = '';
-    for (let i = 0; i < bytes.length; i++) {
-      value = (value << 8) | bytes[i];
-      bits += 8;
-      while (bits >= 5) {
-        output += alphabet[(value >>> (bits - 5)) & 31];
-        bits -= 5;
-      }
-    }
-    if (bits > 0) {
-      output += alphabet[(value << (5 - bits)) & 31];
-    }
-    return output;
-  }
-
-  showStatus(msg, type) {
-    this.statusMsg.textContent = msg;
-    this.statusMsg.className = `status-message status-${type}`;
-  }
-
   startTimer() {
     this.updateCodes();
-    this.timerInterval = setInterval(() => {
-      this.updateCodes();
-    }, 1000);
+    setInterval(() => this.updateCodes(), 1000);
   }
 
   updateCodes() {
-    const now = Math.floor(Date.now() / 1000);
-    const seconds = now % 30;
-    const progress = ((30 - seconds) / 30) * 100;
+    const progress = ((30 - (Math.floor(Date.now() / 1000) % 30)) / 30) * 100;
     this.progressBar.style.width = `${progress}%`;
 
-    // Update displayed codes if accounts exist
-    const items = document.querySelectorAll('.account-item');
-    items.forEach(item => {
-      const id = item.dataset.id;
-      const account = this.accounts.find(a => a.id == id);
-      if (account) {
-        const totp = new OTPAuth.TOTP({
-            issuer: account.issuer,
-            label: account.label,
-            algorithm: 'SHA1',
-            digits: 6,
-            period: 30,
-            secret: account.secret
-        });
-        const code = totp.generate();
-        const codeEl = item.querySelector('.account-otp');
-        const newCode = code.slice(0, 3) + ' ' + code.slice(3);
-        if (codeEl.textContent !== newCode) {
-          codeEl.textContent = newCode;
-        }
+    document.querySelectorAll('.account-item').forEach(item => {
+      const acc = this.accounts.find(a => a.id == item.dataset.id);
+      if (acc) {
+        const totp = new OTPAuth.TOTP({ secret: acc.secret });
+        item.querySelector('.account-otp').innerText = totp.generate().replace(/(\d{3})/, '$1 ');
       }
     });
   }
 
   render() {
     this.accountList.classList.toggle('privacy-enabled', this.privacyMode);
-    this.privacyBtn.classList.toggle('active', this.privacyMode);
-    this.privacyBtn.querySelector('.eye-open').classList.toggle('hidden', this.privacyMode);
-    this.privacyBtn.querySelector('.eye-closed').classList.toggle('hidden', !this.privacyMode);
-
     if (this.filteredAccounts.length === 0) {
-      this.accountList.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-          </div>
-          <p>${this.accounts.length > 0 ? 'No matching accounts' : 'No accounts yet'}</p>
-          <button id="render-add-btn">Import QR Code</button>
-        </div>
-      `;
-      const btn = document.getElementById('render-add-btn');
-      if (btn) btn.addEventListener('click', () => this.importModal.classList.remove('hidden'));
+      this.accountList.innerHTML = '<div class="empty-state">Nothing found.</div>';
       return;
     }
 
     this.accountList.innerHTML = '';
-    this.filteredAccounts.forEach((acc, index) => {
-      const item = document.createElement('div');
-      item.className = 'account-item';
-      item.dataset.id = acc.id;
-      item.style.animationDelay = `${index * 0.05}s`;
-      
-      const totp = new OTPAuth.TOTP({
-          issuer: acc.issuer,
-          label: acc.label,
-          algorithm: 'SHA1',
-          digits: 6,
-          period: 30,
-          secret: acc.secret
-      });
-      const code = totp.generate();
-      const displayCode = code.slice(0, 3) + ' ' + code.slice(3);
-
-      item.innerHTML = `
-        <div class="drag-handle">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-        </div>
-        <div class="account-info" title="${acc.issuer}: ${acc.label}">
+    this.filteredAccounts.forEach(acc => {
+      const el = document.createElement('div');
+      el.className = 'account-item';
+      el.dataset.id = acc.id;
+      el.innerHTML = `
+        <div class="account-info">
           <span class="account-label">${acc.label}</span>
           <span class="account-issuer">${acc.issuer}</span>
         </div>
-        <div class="account-right">
-          <div class="account-otp">${displayCode}</div>
-        </div>
-        <button class="delete-btn" title="Remove account" data-id="${acc.id}">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div class="account-otp">--- ---</div>
       `;
-
-      // Drag and drop setup (only if no search active)
-      if (!this.searchInput.value) {
-        item.draggable = true;
-        item.addEventListener('dragstart', (e) => this.handleDragStart(e, index));
-        item.addEventListener('dragover', (e) => this.handleDragOver(e));
-        item.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-        item.addEventListener('drop', (e) => this.handleDrop(e, index));
-        item.addEventListener('dragend', () => this.handleDragEnd());
-      }
-
-      // Copy code on click
-      item.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn') || e.target.closest('.drag-handle')) return;
-        
-        navigator.clipboard.writeText(code);
-        
-        // Update last used
-        acc.lastUsed = Date.now();
-        this.saveAccounts();
-
-        // Visual feedback on the code itself
-        const otpDisplay = item.querySelector('.account-otp');
-        otpDisplay.style.transition = 'none';
-        otpDisplay.style.color = 'var(--accent)';
-        otpDisplay.style.filter = 'drop-shadow(0 0 10px var(--accent))';
-        
-        setTimeout(() => {
-          otpDisplay.style.transition = 'all 0.5s';
-          otpDisplay.style.color = '';
-          otpDisplay.style.filter = '';
-        }, 300);
-
-        this.showToast('Copied to clipboard');
-      });
-
-      // Delete action
-      const delBtn = item.querySelector('.delete-btn');
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (confirm(`Remove ${acc.issuer} (${acc.label})?`)) {
-          this.deleteAccount(acc.id);
-        }
-      });
-
-      this.accountList.appendChild(item);
+      el.onclick = () => {
+        const totp = new OTPAuth.TOTP({ secret: acc.secret });
+        navigator.clipboard.writeText(totp.generate());
+        this.showToast('copid to clipboard');
+      };
+      this.accountList.appendChild(el);
     });
-  }
-
-  deleteAccount(id) {
-    this.accounts = this.accounts.filter(a => a.id != id);
-    this.applyFiltersAndSort();
-    this.saveAccounts();
-    this.showToast('Account removed');
-  }
-
-  clearAllAccounts() {
-    this.accounts = [];
-    this.filteredAccounts = [];
-    this.saveAccounts();
-    this.render();
-    this.showToast('All accounts cleared');
-  }
-
-  // Drag and Drop Handlers
-  handleDragStart(e, index) {
-    this.draggedIdx = index;
-    e.currentTarget.classList.add('dragging');
-    e.dataTransfer.effectAllowed = 'move';
-  }
-
-  handleDragOver(e) {
-    e.preventDefault();
-    e.currentTarget.classList.add('drag-over');
-    return false;
-  }
-
-  handleDragLeave(e) {
-    e.currentTarget.classList.remove('drag-over');
-  }
-
-  handleDrop(e, targetIdx) {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (this.draggedIdx !== targetIdx) {
-      const movedItem = this.accounts.splice(this.draggedIdx, 1)[0];
-      this.accounts.splice(targetIdx, 0, movedItem);
-      
-      // Switch to custom sort after manual reorder
-      this.currentSort = 'custom';
-      document.querySelectorAll('.sort-chip').forEach(c => {
-        c.classList.toggle('active', c.dataset.sort === 'custom');
-      });
-
-      this.applyFiltersAndSort();
-      this.saveAccounts();
-      this.showToast('Reordered');
-    }
-  }
-
-  handleDragEnd() {
-    const dragging = document.querySelector('.dragging');
-    if (dragging) dragging.classList.remove('dragging');
-    document.querySelectorAll('.account-item').forEach(i => i.classList.remove('drag-over'));
   }
 
   togglePrivacyMode() {
     this.privacyMode = !this.privacyMode;
     chrome.storage.local.set({ privacyMode: this.privacyMode });
     this.render();
-    this.showToast(this.privacyMode ? 'Privacy Mode Enabled' : 'Privacy Mode Disabled');
   }
 
   showToast(msg) {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerHTML = `
-      <div style="color: var(--accent)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-      </div>
-      <span>${msg}</span>
-    `;
-    this.toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 2800);
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerText = msg;
+    this.toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+  }
+
+  showStatus(msg, type) {
+    this.statusMsg.innerText = msg;
+    this.statusMsg.className = `status-message status-${type}`;
+    this.statusMsg.style.display = 'block';
+  }
+
+  clearAllAccounts() {
+    this.accounts = [];
+    this.saveAccounts();
+    this.render();
   }
 
   // export accounts to a file
   exportVault() {
     if (this.accounts.length === 0) {
-      this.showToast('No data to export');
+      this.showToast('no data to export');
       return;
     }
 
@@ -651,10 +376,8 @@ class AuthenticatorApp {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    this.showToast('Vault exported safely');
+    this.showToast('vault exported safely');
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  new AuthenticatorApp();
-});
+document.addEventListener('DOMContentLoaded', () => new AuthenticatorApp());
