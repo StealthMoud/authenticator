@@ -23,8 +23,21 @@ class AuthenticatorApp {
     this.privacyBtn = document.getElementById('privacy-btn');
     this.toastContainer = document.getElementById('toast-container');
     this.gmailBackupBtn = document.getElementById('gmail-backup-btn'); // click for bakcup
+    this.githubSyncBtn = document.getElementById("github-backup-btn"); 
+
 
     this.init();
+    document.getElementById("save-gh-config").addEventListener("click", () => { 
+    document.getElementById("fetch-github-btn").addEventListener("click", () => this.fetchFromGithub()); 
+
+      const token = document.getElementById("gh-token").value; 
+      const repo = document.getElementById("gh-repo").value; 
+      chrome.storage.local.set({ ghToken: token, ghRepo: repo }, () => { 
+        document.getElementById("github-config").classList.add("hidden"); 
+        this.showToast("config saved"); 
+      }); 
+    }); 
+
   }
 
   async init() {

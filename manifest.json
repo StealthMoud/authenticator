@@ -3,7 +3,11 @@
   "name": "Authenticator",
   "version": "1.0",
   "description": "A clean, simple authenticator.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "identity"],
+  "background": { 
+    "service_worker": "background.js" 
+  }, 
+
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
