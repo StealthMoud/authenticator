@@ -250,21 +250,24 @@ h1 {
 .account-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  max-width: 180px;
-  flex-grow: 1;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .account-label {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: var(--text-dim);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .account-issuer {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--text-main);
   white-space: nowrap;
@@ -275,7 +278,8 @@ h1 {
 .account-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .account-otp {
