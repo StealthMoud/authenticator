@@ -27,12 +27,15 @@ class AuthenticatorApp {
     this.saveGhConfigBtn = document.getElementById('save-gh-config');
     this.fetchGithubBtn = document.getElementById('fetch-github-btn');
     this.importAllGhBtn = document.getElementById('import-all-github');
+    this.ghTokenInput = document.getElementById('gh-token');
+    this.ghRepoInput = document.getElementById('gh-repo');
 
     this.init();
   }
 
   async init() {
     await this.loadAccounts();
+    await this.loadGithubConfig();
     this.setupEventListeners();
     this.startTimer();
     this.applyFiltersAndSort();
@@ -44,6 +47,16 @@ class AuthenticatorApp {
         this.accounts = result[this.storageKey] || [];
         this.privacyMode = result.privacyMode || false;
         this.filteredAccounts = [...this.accounts];
+        resolve();
+      });
+    });
+  }
+
+  async loadGithubConfig() {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(['ghToken', 'ghRepo'], (result) => {
+        if (result.ghToken) this.ghTokenInput.value = result.ghToken;
+        if (result.ghRepo) this.ghRepoInput.value = result.ghRepo;
         resolve();
       });
     });
@@ -68,6 +81,14 @@ class AuthenticatorApp {
     if (this.githubSyncBtn) this.githubSyncBtn.addEventListener('click', () => this.syncToGithub());
     if (this.saveGhConfigBtn) this.saveGhConfigBtn.addEventListener('click', () => this.saveGithubConfig());
     if (this.fetchGithubBtn) this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
+
+    // auto-save github config as user types so it doesnt dissapear
+    this.ghTokenInput.addEventListener('input', () => {
+      chrome.storage.local.set({ ghToken: this.ghTokenInput.value.trim() });
+    });
+    this.ghRepoInput.addEventListener('input', () => {
+      chrome.storage.local.set({ ghRepo: this.ghRepoInput.value.trim() });
+    });
 
     // sorting chips
     document.querySelectorAll('.sort-chip').forEach(chip => {
@@ -122,8 +143,8 @@ class AuthenticatorApp {
   // --- github cloud logic ---
 
   async saveGithubConfig() {
-    const token = document.getElementById('gh-token').value.trim();
-    const repo = document.getElementById('gh-repo').value.trim();
+    const token = this.ghTokenInput.value.trim();
+    const repo = this.ghRepoInput.value.trim();
     
     if (!token || !repo) {
       this.showToast('missing fields');
