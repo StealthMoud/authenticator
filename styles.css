@@ -185,22 +185,26 @@ h1 {
 }
 
 #clear-all-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
   color: var(--text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.7rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  transition: all 0.3s;
-  padding: 4px 8px;
-  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  padding: 6px 16px;
+  border-radius: 100px;
+  backdrop-filter: blur(5px);
 }
 
 #clear-all-btn:hover {
-  color: var(--danger);
-  background: rgba(244, 63, 94, 0.05);
+  color: white;
+  background: var(--danger);
+  border-color: var(--danger);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
 }
 
 .sort-container {
