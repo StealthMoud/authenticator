@@ -618,26 +618,27 @@ class AuthenticatorApp {
     setTimeout(() => toast.remove(), 2800);
   }
 
-  // send data to gmail draft
+  // export accounts to a file
   backupToGmail() {
     if (this.accounts.length === 0) {
-      this.showToast('No data to backup');
+      this.showToast('No data to export');
       return;
     }
 
     const backupData = JSON.stringify(this.accounts, null, 2);
-    const subject = encodeURIComponent('Authenticator Backup - ' + new Date().toLocaleDateString());
-    const body = encodeURIComponent(
-      'IMPORTANT: Keep this email secure. It contains your 2FA secrets.\n\n' +
-      'To restore, copy the JSON below:\n\n' +
-      backupData
-    );
-
-    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}`;
+    const blob = new Blob([backupData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
     
-    // open in new tab for user to send
-    window.open(gmailUrl, '_blank');
-    this.showToast('Gmail draft opened');
+    // create a hidden link and click it
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `auth_vault_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.showToast('Vault exported safely');
   }
 }
 
