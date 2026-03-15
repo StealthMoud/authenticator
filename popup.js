@@ -7,6 +7,7 @@ class AuthenticatorApp {
     this.timerInterval = null;
     this.storageKey = 'authenticator_accounts';
     this.currentSort = 'custom';
+    this.privacyMode = false;
 
     // Elements
     this.accountList = document.getElementById('account-list');
@@ -19,6 +20,7 @@ class AuthenticatorApp {
     this.statusMsg = document.getElementById('import-status');
     this.progressBar = document.getElementById('global-timer');
     this.clearAllBtn = document.getElementById('clear-all-btn');
+    this.privacyBtn = document.getElementById('privacy-btn');
     this.toastContainer = document.getElementById('toast-container');
 
     this.init();
@@ -33,8 +35,9 @@ class AuthenticatorApp {
 
   async loadAccounts() {
     return new Promise((resolve) => {
-      chrome.storage.local.get([this.storageKey], (result) => {
+      chrome.storage.local.get([this.storageKey, 'privacyMode'], (result) => {
         this.accounts = result[this.storageKey] || [];
+        this.privacyMode = result.privacyMode || false;
         this.filteredAccounts = [...this.accounts];
         resolve();
       });
@@ -51,6 +54,9 @@ class AuthenticatorApp {
 
   setupEventListeners() {
     this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
+
+    // Privacy Mode
+    this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
 
     // Sorting
     document.querySelectorAll('.sort-chip').forEach(chip => {
@@ -426,6 +432,11 @@ class AuthenticatorApp {
   }
 
   render() {
+    this.accountList.classList.toggle('privacy-enabled', this.privacyMode);
+    this.privacyBtn.classList.toggle('active', this.privacyMode);
+    this.privacyBtn.querySelector('.eye-open').classList.toggle('hidden', this.privacyMode);
+    this.privacyBtn.querySelector('.eye-closed').classList.toggle('hidden', !this.privacyMode);
+
     if (this.filteredAccounts.length === 0) {
       this.accountList.innerHTML = `
         <div class="empty-state">
@@ -579,6 +590,13 @@ class AuthenticatorApp {
     const dragging = document.querySelector('.dragging');
     if (dragging) dragging.classList.remove('dragging');
     document.querySelectorAll('.account-item').forEach(i => i.classList.remove('drag-over'));
+  }
+
+  togglePrivacyMode() {
+    this.privacyMode = !this.privacyMode;
+    chrome.storage.local.set({ privacyMode: this.privacyMode });
+    this.render();
+    this.showToast(this.privacyMode ? 'Privacy Mode Enabled' : 'Privacy Mode Disabled');
   }
 
   showToast(msg) {

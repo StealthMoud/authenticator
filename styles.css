@@ -633,3 +633,19 @@ footer {
 .hidden { display: none !important; }
 .dragging { opacity: 0.4; }
 .drag-over { border-top: 2px solid var(--primary); }
+
+/* Privacy Mode */
+.privacy-enabled .account-label,
+.privacy-enabled .account-otp {
+  filter: blur(8px);
+  transition: filter 0.3s ease;
+  user-select: none;
+  pointer-events: none;
+}
+
+#privacy-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 15px var(--primary-glow);
+}
