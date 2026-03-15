@@ -20,8 +20,9 @@ This rule defines the core visual and structural philosophy of the USER (Stealth
 
 ## 3. Interaction & "Humanized" Behavior
 - **GitHub Connectivity**: Projects must always be connected to GitHub.
-- **Commit Pattern**: 
+- **Commit & Sync Pattern**: 
   - Commit every "tiny" change. No large bulk commits.
+  - **Auto-Push**: Always run `git push` immediately after every commit to maintain cloud synchronization.
   - Messages must be humanized and SHORT.
   - **CRITICAL**: No emojis. No signs of AI (e.g., avoid "Updated...", "Refactored...", use "added button", "fix css").
 - **Code Commenting**: 
