@@ -253,6 +253,13 @@ h1 {
   gap: 2px;
   flex: 1;
   min-width: 0;
+  transition: all 0.3s ease;
+}
+
+.account-item:hover .account-info span {
+  white-space: normal;
+  overflow: visible;
+  word-break: break-all;
 }
 
 .account-label {
