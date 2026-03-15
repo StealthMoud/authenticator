@@ -179,9 +179,11 @@ h1 {
 }
 
 .footer-actions {
-  padding: 8px 24px;
+  padding: 12px 24px;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
 }
 
 #clear-all-btn {
@@ -205,6 +207,34 @@ h1 {
   border-color: var(--danger);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+}
+
+.btn-premium {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  padding: 10px 24px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 10px 20px -5px var(--primary-glow);
+  width: 100%;
+}
+
+.btn-premium:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 15px 30px -5px var(--primary);
+  filter: brightness(1.1);
+}
+
+.btn-premium:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .sort-container {
