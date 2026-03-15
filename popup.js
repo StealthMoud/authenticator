@@ -18,6 +18,7 @@ class AuthenticatorApp {
     this.fileInput = document.getElementById('file-input');
     this.statusMsg = document.getElementById('import-status');
     this.progressBar = document.getElementById('global-timer');
+    this.clearAllBtn = document.getElementById('clear-all-btn');
 
     this.init();
   }
@@ -56,6 +57,17 @@ class AuthenticatorApp {
         (acc.label && acc.label.toLowerCase().includes(term))
       );
       this.render();
+    });
+
+    // Clear All
+    this.clearAllBtn.addEventListener('click', () => {
+      if (this.accounts.length === 0) {
+        this.showToast('No accounts to clear');
+        return;
+      }
+      if (confirm('Are you sure you want to remove ALL accounts? This cannot be undone.')) {
+        this.clearAllAccounts();
+      }
     });
 
     // Modal
@@ -114,8 +126,13 @@ class AuthenticatorApp {
             throw new Error('Invalid image dimensions');
           }
 
-          let width = img.width;
-          let height = img.height;
+          let width = Math.floor(img.width);
+          let height = Math.floor(img.height);
+          
+          if (width <= 0 || height <= 0) {
+            throw new Error('Image has zero dimensions');
+          }
+
           const maxDim = 1500;
           if (width > maxDim || height > maxDim) {
             const ratio = Math.min(maxDim / width, maxDim / height);
@@ -128,34 +145,45 @@ class AuthenticatorApp {
           ctx.drawImage(img, 0, 0, width, height);
           
           const imageData = ctx.getImageData(0, 0, width, height);
-          if (!imageData || !imageData.data) {
-            throw new Error('Failed to extract image data');
+          if (!imageData || !imageData.data || imageData.data.length === 0) {
+            throw new Error('Could not access image pixels');
           }
 
+          // Force integer dimensions from the actual extracted data
+          const finalWidth = Math.floor(imageData.width);
+          const finalHeight = Math.floor(imageData.height);
+
           // Pass 1: Normal scan
-          let codeArr = jsQR(imageData.data, width, height, { inversionAttempts: "dontInvert" });
+          let codeArr = jsQR(imageData.data, finalWidth, finalHeight, { 
+            inversionAttempts: "dontInvert" 
+          });
 
           // Pass 2: Inverted scan (Dark mode)
           if (!codeArr) {
-            codeArr = jsQR(imageData.data, width, height, { inversionAttempts: "onlyInvert" });
+            codeArr = jsQR(imageData.data, finalWidth, finalHeight, { 
+              inversionAttempts: "onlyInvert" 
+            });
           }
 
           // Pass 3: Grayscale + High Contrast Preprocessing
           if (!codeArr) {
-            this.showStatus('Scanning deeper...', '');
+            this.showStatus('Enhancing image...', '');
             const data = new Uint8ClampedArray(imageData.data);
             for (let i = 0; i < data.length; i += 4) {
               const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-              const val = avg < 128 ? 0 : 255; // Thresholding
+              const val = avg < 128 ? 0 : 255;
               data[i] = data[i+1] = data[i+2] = val;
             }
-            codeArr = jsQR(data, width, height, { inversionAttempts: "dontInvert" });
+            codeArr = jsQR(data, finalWidth, finalHeight, { 
+              inversionAttempts: "dontInvert" 
+            });
           }
 
           if (codeArr && codeArr.data) {
+            console.log('QR Code detected:', codeArr.data);
             this.handleQRCode(codeArr.data);
           } else {
-            this.showStatus('No QR code detected. Try a clearer screenshot.', 'error');
+            this.showStatus('No QR code detected. Try a closer screenshot.', 'error');
           }
         } catch (err) {
           console.error('Process Error:', err);
@@ -444,6 +472,14 @@ class AuthenticatorApp {
     this.saveAccounts();
     this.render();
     this.showToast('Account removed');
+  }
+
+  clearAllAccounts() {
+    this.accounts = [];
+    this.filteredAccounts = [];
+    this.saveAccounts();
+    this.render();
+    this.showToast('All accounts cleared');
   }
 
   showToast(msg) {

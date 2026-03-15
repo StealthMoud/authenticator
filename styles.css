@@ -84,6 +84,11 @@ h1 span {
   transform: translateY(-1px);
 }
 
+.header-actions button.secondary-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
 /* Search */
 .search-container {
   padding: 12px 20px;
