@@ -88,6 +88,11 @@ class AuthenticatorApp {
     });
   }
 
+  handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) this.processFile(file);
+  }
+
   async processFile(file) {
     if (!file || !file.type.startsWith('image/')) {
       this.showStatus('Please upload a valid image file.', 'error');
