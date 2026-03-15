@@ -5,7 +5,7 @@ class AuthenticatorApp {
     this.accounts = [];
     this.filteredAccounts = [];
     this.timerInterval = null;
-    this.storageKey = 'sync_auth_accounts';
+    this.storageKey = 'authenticator_accounts';
 
     // Elements
     this.accountList = document.getElementById('account-list');
@@ -88,14 +88,9 @@ class AuthenticatorApp {
     });
   }
 
-  handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) this.processFile(file);
-  }
-
   async processFile(file) {
-    if (!file.type.startsWith('image/')) {
-      this.showStatus('Please upload an image file.', 'error');
+    if (!file || !file.type.startsWith('image/')) {
+      this.showStatus('Please upload a valid image file.', 'error');
       return;
     }
 
@@ -104,43 +99,62 @@ class AuthenticatorApp {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
+      img.onerror = () => this.showStatus('Failed to load image file.', 'error');
       img.onload = () => {
-        // Use a canvas to extract image data
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        
-        // Optimize image size if too large for jsQR (max 2000px)
-        let width = img.width;
-        let height = img.height;
-        const maxDim = 2000;
-        if (width > maxDim || height > maxDim) {
-          const ratio = Math.min(maxDim / width, maxDim / height);
-          width *= ratio;
-          height *= ratio;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
-
-        if (code) {
-          this.handleQRCode(code.data);
-        } else {
-          // Try with inverted colors if first attempt fails
-          this.showStatus('Scanning deeper...', '');
-          const codeInv = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "onlyInvert",
-          });
-          if (codeInv) {
-            this.handleQRCode(codeInv.data);
-          } else {
-            this.showStatus('No QR code detected. Make sure the QR code is visible in the screenshot.', 'error');
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!img.width || !img.height) {
+            throw new Error('Invalid image dimensions');
           }
+
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1500;
+          if (width > maxDim || height > maxDim) {
+            const ratio = Math.min(maxDim / width, maxDim / height);
+            width = Math.floor(width * ratio);
+            height = Math.floor(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          const imageData = ctx.getImageData(0, 0, width, height);
+          if (!imageData || !imageData.data) {
+            throw new Error('Failed to extract image data');
+          }
+
+          // Pass 1: Normal scan
+          let codeArr = jsQR(imageData.data, width, height, { inversionAttempts: "dontInvert" });
+
+          // Pass 2: Inverted scan (Dark mode)
+          if (!codeArr) {
+            codeArr = jsQR(imageData.data, width, height, { inversionAttempts: "onlyInvert" });
+          }
+
+          // Pass 3: Grayscale + High Contrast Preprocessing
+          if (!codeArr) {
+            this.showStatus('Scanning deeper...', '');
+            const data = new Uint8ClampedArray(imageData.data);
+            for (let i = 0; i < data.length; i += 4) {
+              const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+              const val = avg < 128 ? 0 : 255; // Thresholding
+              data[i] = data[i+1] = data[i+2] = val;
+            }
+            codeArr = jsQR(data, width, height, { inversionAttempts: "dontInvert" });
+          }
+
+          if (codeArr && codeArr.data) {
+            this.handleQRCode(codeArr.data);
+          } else {
+            this.showStatus('No QR code detected. Try a clearer screenshot.', 'error');
+          }
+        } catch (err) {
+          console.error('Process Error:', err);
+          this.showStatus('Error processing image. Please try again.', 'error');
         }
       };
       img.src = e.target.result;
@@ -160,10 +174,12 @@ class AuthenticatorApp {
       }
 
       const totp = OTPAuth.URI.parse(uri);
-      this.addAccount(totp.secret.base32, totp.issuer || 'Unknown', totp.label || 'Account', uri);
+      const added = this.addAccount(totp.secret.base32, totp.issuer || 'Unknown', totp.label || 'Account', uri);
       
-      this.showStatus('Account added successfully!', 'success');
-      this.closeModalDelayed();
+      if (added) {
+        this.showStatus('Account added successfully!', 'success');
+        this.closeModalDelayed();
+      }
 
     } catch (err) {
       console.error('QR Parse Error:', err);

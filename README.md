@@ -1,6 +1,6 @@
-# SyncAuth Pro
+# Authenticator
 
-SyncAuth Pro is a professional Chrome extension designed to provide a secure and efficient way to manage Two-Factor Authentication (2FA) codes directly within your browser. It features advanced image processing to detect QR codes from phone screenshots and natively supports the Google Authenticator migration format.
+Authenticator is a professional Chrome extension designed to provide a secure and efficient way to manage Two-Factor Authentication (2FA) codes directly within your browser. It features advanced image processing to detect QR codes from phone screenshots and natively supports the Google Authenticator migration format.
 
 ## Features
 
@@ -25,7 +25,7 @@ SyncAuth Pro is a professional Chrome extension designed to provide a secure and
 1. Open your authenticator app on your mobile device.
 2. Select the option to export accounts.
 3. Take a screenshot of the generated QR code.
-4. Open the SyncAuth Pro extension in your browser.
+4. Open the Authenticator extension in your browser.
 5. Click the import button and upload your screenshot.
 
 ### Adding New Accounts
@@ -40,7 +40,7 @@ You can also import standard TOTP setup QR codes provided by websites during the
 
 ## Privacy and Security
 
-SyncAuth Pro is designed with privacy as a priority. Authentication secrets are stored locally on your machine. There is no external tracking, telemetry, or cloud synchronization involved.
+Authenticator is designed with privacy as a priority. Authentication secrets are stored locally on your machine. There is no external tracking, telemetry, or cloud synchronization involved.
 
 ## License
 

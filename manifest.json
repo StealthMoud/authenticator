@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "SyncAuth Professional",
+  "name": "Authenticator",
   "version": "1.0",
-  "description": "A clean, professional authenticator with QR sync.",
+  "description": "A clean, simple authenticator.",
   "permissions": ["storage"],
   "action": {
     "default_popup": "popup.html",
