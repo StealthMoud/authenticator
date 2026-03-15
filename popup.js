@@ -461,12 +461,25 @@ class AuthenticatorApp {
         item.addEventListener('dragend', () => this.handleDragEnd());
       }
 
-      // Copy code on click (of the item, but not the delete button)
+      // Copy code on click
       item.addEventListener('click', (e) => {
-        if (e.target.closest('.delete-btn')) return;
-        const cleanCode = code;
-        navigator.clipboard.writeText(cleanCode);
-        this.showToast('Code copied!');
+        if (e.target.closest('.delete-btn') || e.target.closest('.drag-handle')) return;
+        
+        navigator.clipboard.writeText(code);
+        
+        // Visual feedback on the code itself
+        const otpDisplay = item.querySelector('.account-otp');
+        otpDisplay.style.transition = 'none';
+        otpDisplay.style.color = 'var(--accent)';
+        otpDisplay.style.filter = 'drop-shadow(0 0 10px var(--accent))';
+        
+        setTimeout(() => {
+          otpDisplay.style.transition = 'all 0.5s';
+          otpDisplay.style.color = '';
+          otpDisplay.style.filter = '';
+        }, 300);
+
+        this.showToast('Copied to clipboard');
       });
 
       // Delete action
@@ -539,11 +552,13 @@ class AuthenticatorApp {
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <div style="color: var(--accent)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
       <span>${msg}</span>
     `;
     this.toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+    setTimeout(() => toast.remove(), 2800);
   }
 }
 
