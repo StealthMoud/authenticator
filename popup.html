@@ -140,6 +140,19 @@
         <div id="global-timer" class="progress-bar"></div>
       </div>
     </footer>
+    
+    <!-- Action Confirmation Overlay -->
+    <div id="confirm-overlay" class="modal hidden" style="z-index: 200;">
+      <div class="modal-content" style="width: 280px; text-align: center; padding: 24px;">
+        <h3 id="confirm-title" style="margin-bottom: 8px;">Confirm Action</h3>
+        <p id="confirm-message" style="margin-bottom: 20px; font-size: 0.8rem;">Are you sure?</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+          <button id="confirm-cancel-btn" class="btn-action btn-primary" style="height: 38px; width: 100px; flex-direction: row;">Cancel</button>
+          <button id="confirm-proceed-btn" class="btn-action btn-danger" style="height: 38px; width: 100px; flex-direction: row; background: var(--danger); color: white;">Confirm</button>
+        </div>
+      </div>
+    </div>
+
     <div id="toast-container"></div>
   </div>
 

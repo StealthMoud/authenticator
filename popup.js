@@ -37,6 +37,13 @@ class AuthenticatorApp {
     this.sortOrderBtn = document.getElementById('sort-order-btn');
     this.syncErrorBanner = document.getElementById('sync-error-banner');
     this.fixSyncBtn = document.getElementById('fix-sync-btn');
+    
+    // confirm overlay elements
+    this.confirmOverlay = document.getElementById('confirm-overlay');
+    this.confirmTitle = document.getElementById('confirm-title');
+    this.confirmMessage = document.getElementById('confirm-message');
+    this.confirmCancelBtn = document.getElementById('confirm-cancel-btn');
+    this.confirmProceedBtn = document.getElementById('confirm-proceed-btn');
 
     this.init();
   }
@@ -94,7 +101,13 @@ class AuthenticatorApp {
     if (this.searchInput) this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
     if (this.privacyBtn) this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
 
-    if (this.exportVaultBtn) this.exportVaultBtn.addEventListener('click', () => this.exportVault());
+    if (this.exportVaultBtn) {
+      this.exportVaultBtn.addEventListener('click', () => {
+        if (this.accounts.length === 0) { this.showToast('no data to export'); return; }
+        this.confirmAction('Export Vault', 'Download local backup of your 2FA codes?', () => this.exportVault());
+      });
+    }
+    
     if (this.githubSyncBtn) this.githubSyncBtn.addEventListener('click', () => this.syncToGithub());
     if (this.saveGhConfigBtn) this.saveGhConfigBtn.addEventListener('click', () => this.saveGithubConfig());
     if (this.fetchGithubBtn) this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
@@ -145,7 +158,7 @@ class AuthenticatorApp {
         if (this.accounts.length === 0) {
           this.showToast('no data to clear'); return;
         }
-        if (confirm('purge all data? u cant undo this!')) this.clearAllAccounts();
+        this.confirmAction('Destructive Action', 'purge all data? u cant undo this!', () => this.clearAllAccounts());
       });
     }
 
@@ -169,6 +182,28 @@ class AuthenticatorApp {
         if (file) this.processFile(file);
       });
     }
+  }
+
+  confirmAction(title, message, onConfirm) {
+    if (!this.confirmOverlay) return;
+    this.confirmTitle.innerText = title;
+    this.confirmMessage.innerText = message;
+    this.confirmOverlay.classList.remove('hidden');
+
+    const cleanup = () => {
+      this.confirmOverlay.classList.add('hidden');
+      this.confirmCancelBtn.removeEventListener('click', onCancel);
+      this.confirmProceedBtn.removeEventListener('click', onProceed);
+    };
+
+    const onCancel = () => cleanup();
+    const onProceed = () => {
+      cleanup();
+      onConfirm();
+    };
+
+    this.confirmCancelBtn.addEventListener('click', onCancel);
+    this.confirmProceedBtn.addEventListener('click', onProceed);
   }
 
   updateOrderIcon() {
@@ -418,7 +453,6 @@ class AuthenticatorApp {
   showStatus(msg, type) { if (this.statusMsg) { this.statusMsg.innerText = msg; this.statusMsg.className = `status-message status-${type}`; this.statusMsg.style.display = 'block'; } }
   clearAllAccounts() { this.accounts = []; this.saveAccounts(); this.render(); this.syncToGithub(); }
   exportVault() {
-    if (this.accounts.length === 0) { this.showToast('no data to export'); return; }
     const backupData = JSON.stringify(this.accounts, null, 2);
     const blob = new Blob([backupData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
