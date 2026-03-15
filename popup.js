@@ -119,21 +119,23 @@ class AuthenticatorApp {
       img.onerror = () => this.showStatus('Failed to load image file.', 'error');
       img.onload = () => {
         try {
+          const runScan = (w, h, data) => {
+            return jsQR(data, Math.floor(w), Math.floor(h), { 
+              inversionAttempts: "dontInvert" 
+            }) || jsQR(data, Math.floor(w), Math.floor(h), { 
+              inversionAttempts: "onlyInvert" 
+            });
+          };
+
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           
-          if (!img.width || !img.height) {
-            throw new Error('Invalid image dimensions');
-          }
-
           let width = Math.floor(img.width);
           let height = Math.floor(img.height);
-          
-          if (width <= 0 || height <= 0) {
-            throw new Error('Image has zero dimensions');
-          }
+          if (width <= 0 || height <= 0) throw new Error('Invalid image size');
 
-          const maxDim = 1500;
+          // Try original resolution first (best for dense codes)
+          const maxDim = 2500;
           if (width > maxDim || height > maxDim) {
             const ratio = Math.min(maxDim / width, maxDim / height);
             width = Math.floor(width * ratio);
@@ -145,49 +147,44 @@ class AuthenticatorApp {
           ctx.drawImage(img, 0, 0, width, height);
           
           const imageData = ctx.getImageData(0, 0, width, height);
-          if (!imageData || !imageData.data || imageData.data.length === 0) {
-            throw new Error('Could not access image pixels');
-          }
+          let codeResult = runScan(width, height, imageData.data);
 
-          // Force integer dimensions from the actual extracted data
-          const finalWidth = Math.floor(imageData.width);
-          const finalHeight = Math.floor(imageData.height);
-
-          // Pass 1: Normal scan
-          let codeArr = jsQR(imageData.data, finalWidth, finalHeight, { 
-            inversionAttempts: "dontInvert" 
-          });
-
-          // Pass 2: Inverted scan (Dark mode)
-          if (!codeArr) {
-            codeArr = jsQR(imageData.data, finalWidth, finalHeight, { 
-              inversionAttempts: "onlyInvert" 
-            });
-          }
-
-          // Pass 3: Grayscale + High Contrast Preprocessing
-          if (!codeArr) {
-            this.showStatus('Enhancing image...', '');
-            const data = new Uint8ClampedArray(imageData.data);
-            for (let i = 0; i < data.length; i += 4) {
-              const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-              const val = avg < 128 ? 0 : 255;
-              data[i] = data[i+1] = data[i+2] = val;
+          // If simple scan fails, try aggressive preprocessing
+          if (!codeResult) {
+            this.showStatus('Deep scanning...', '');
+            
+            // Try different contrast thresholds
+            const thresholds = [128, 160, 100, 200];
+            for (const threshold of thresholds) {
+              const binarizedData = new Uint8ClampedArray(imageData.data);
+              for (let i = 0; i < binarizedData.length; i += 4) {
+                const avg = (binarizedData[i] + binarizedData[i+1] + binarizedData[i+2]) / 3;
+                const val = avg < threshold ? 0 : 255;
+                binarizedData[i] = binarizedData[i+1] = binarizedData[i+2] = val;
+              }
+              codeResult = runScan(width, height, binarizedData);
+              if (codeResult) break;
             }
-            codeArr = jsQR(data, finalWidth, finalHeight, { 
-              inversionAttempts: "dontInvert" 
-            });
           }
 
-          if (codeArr && codeArr.data) {
-            console.log('QR Code detected:', codeArr.data);
-            this.handleQRCode(codeArr.data);
+          // Last resort: Grayscale (preserving some detail)
+          if (!codeResult) {
+            const grayData = new Uint8ClampedArray(imageData.data);
+            for (let i = 0; i < grayData.length; i += 4) {
+              const val = (grayData[i] * 0.299 + grayData[i+1] * 0.587 + grayData[i+2] * 0.114);
+              grayData[i] = grayData[i+1] = grayData[i+2] = val;
+            }
+            codeResult = runScan(width, height, grayData);
+          }
+
+          if (codeResult && codeResult.data) {
+            this.handleQRCode(codeResult.data);
           } else {
-            this.showStatus('No QR code detected. Try a closer screenshot.', 'error');
+            this.showStatus('Unable to detect QR. Try cropping the code closer.', 'error');
           }
         } catch (err) {
           console.error('Process Error:', err);
-          this.showStatus('Error processing image. Please try again.', 'error');
+          this.showStatus('Scan failed. Please use a clearer screenshot.', 'error');
         }
       };
       img.src = e.target.result;
