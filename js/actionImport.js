@@ -83,7 +83,25 @@ AuthenticatorApp.prototype.handleQRCode = function(uri) {
   try {
     const totp = OTPAuth.URI.parse(uri);
     let label = totp.label || 'Account';
-    let issuer = totp.issuer || this.inferIssuer(label, 'Unknown');
+    
+    // Prioritise query paramter issuer if it is present
+    let queryIssuer = '';
+    try {
+      const parsedUrl = new URL(uri);
+      queryIssuer = (parsedUrl.searchParams.get('issuer') || '').trim();
+    } catch (err) {
+      const match = uri.match(/[?&]issuer=([^&]+)/i);
+      if (match) {
+        queryIssuer = decodeURIComponent(match[1]).trim();
+      }
+    }
+
+    let issuer = queryIssuer || totp.issuer || this.inferIssuer(label, 'Unknown');
+
+    // If query issuer differs from path prefix, path prefix is actually part of the username label
+    if (queryIssuer && totp.issuer && totp.issuer.toLowerCase() !== queryIssuer.toLowerCase()) {
+      label = totp.label ? `${totp.issuer}:${totp.label}` : totp.issuer;
+    }
     
     // Clean up label if it contains issuer prefix
     if (label.includes(':') && issuer && issuer.toLowerCase() !== 'unknown') {

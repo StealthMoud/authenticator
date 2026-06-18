@@ -121,7 +121,26 @@ class AuthenticatorApp {
         // Auto-fix any missing/Unknown issuers from the label if possible
         let modified = false;
         this.accounts.forEach(acc => {
-          if (!acc.issuer || acc.issuer.toLowerCase() === 'unknown') {
+          let uriModified = false;
+          if (acc.uri) {
+            try {
+              const parsedUrl = new URL(acc.uri);
+              const queryIssuer = (parsedUrl.searchParams.get('issuer') || '').trim();
+              if (queryIssuer && acc.issuer && acc.issuer.toLowerCase() !== queryIssuer.toLowerCase()) {
+                const totp = OTPAuth.URI.parse(acc.uri);
+                if (totp.issuer && totp.issuer.toLowerCase() === acc.issuer.toLowerCase()) {
+                  // Fixed stored issuer if it was matched against path-based prefix mistakenly
+                  acc.issuer = queryIssuer;
+                  acc.label = totp.label ? `${totp.issuer}:${totp.label}` : totp.issuer;
+                  uriModified = true;
+                  modified = true;
+                }
+              }
+            } catch (e) {
+              // Ignore invalid URIs
+            }
+          }
+          if (!uriModified && (!acc.issuer || acc.issuer.toLowerCase() === 'unknown')) {
             const inferred = this.inferIssuer(acc.label, acc.issuer);
             if (inferred && inferred.toLowerCase() !== 'unknown') {
               acc.issuer = inferred;
