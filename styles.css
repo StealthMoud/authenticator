@@ -104,6 +104,9 @@ body {
 /* ==================== Header ==================== */
 header {
   padding: 14px 20px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   border-bottom: 1px solid var(--border-glass);
   background: hsla(222, 24%, 6%, 0.45);
   backdrop-filter: blur(12px);
@@ -196,6 +199,7 @@ h1 {
 }
 
 /* ==================== Connection Status Badge ==================== */
+/*.status-badge */
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -214,6 +218,13 @@ h1 {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   letter-spacing: 0.02em;
+  max-width: 140px;
+}
+
+#status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-badge:hover {
@@ -397,7 +408,7 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 12px;
   gap: 8px;
 }
 
@@ -450,13 +461,13 @@ h1 {
 
 /* ==================== Account List ==================== */
 .account-list {
-  padding: 4px 20px 16px;
+  padding: 12px 20px 20px;
   flex-grow: 1;
   overflow-y: auto;
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 /* ==================== Account Card ==================== */
@@ -464,7 +475,8 @@ h1 {
   background: var(--bg-card);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
-  padding: 14px 18px;
+  padding: 16px 20px;
+  min-height: 74px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -514,16 +526,16 @@ h1 {
 .account-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
   flex: 1;
   min-width: 0;
 }
 
 .account-label {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   color: var(--accent);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -531,7 +543,7 @@ h1 {
 }
 
 .account-issuer {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   color: white;
   white-space: nowrap;
@@ -545,7 +557,7 @@ h1 {
 }
 
 .account-otp {
-  font-size: 1.35rem;
+  font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   background: linear-gradient(135deg, #ffffff 40%, var(--primary-light) 100%);
