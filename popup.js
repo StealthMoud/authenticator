@@ -1263,11 +1263,9 @@ class AuthenticatorApp {
             ${this.getIssuerIcon(acc.issuer)}
           </div>
           <div class="account-info">
-            <div style="display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%;">
-              <span class="account-label">${this.escapeHtml(acc.label)}</span>
-              ${acc.profile ? `<span class="account-profile-badge" title="Imported from: ${this.escapeHtml(acc.profile)}">${this.escapeHtml(acc.profile)}</span>` : ''}
-            </div>
+            <span class="account-label">${this.escapeHtml(acc.label)}</span>
             <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
+            ${acc.profile ? `<span class="account-profile-badge" title="Imported from: ${this.escapeHtml(acc.profile)}">${this.escapeHtml(acc.profile)}</span>` : ''}
           </div>
           <div class="account-otp">--- ---</div>
           <div class="account-actions">

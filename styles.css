@@ -399,7 +399,7 @@ h1 {
 
 /* ==================== Search Area ==================== */
 .search-container {
-  padding: 0 20px 8px;
+  padding: 14px 20px 8px;
   z-index: 10;
 }
 
@@ -1702,9 +1702,9 @@ h1 {
 .account-profile-badge {
   font-size: 0.55rem;
   color: var(--text-dim);
-  background: hsla(0, 0%, 100%, 0.05);
+  background: hsla(0, 0%, 100%, 0.04);
   border: 1px solid var(--border-glass);
-  padding: 1px 6px;
+  padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-weight: 500;
   text-transform: none;
@@ -1712,10 +1712,12 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 120px;
+  max-width: 100%;
   flex-shrink: 0;
   display: inline-block;
   user-select: none;
+  margin-top: 2px;
+  align-self: flex-start;
 }
 
 
