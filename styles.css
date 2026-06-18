@@ -206,6 +206,27 @@ h1 {
   50% { opacity: 0.5; }
 }
 
+/* badge flash animation when new accounts are pulled */
+.badge-flash {
+  animation: badgePulse 1s ease-in-out 3;
+}
+
+.badge-flash #status-text {
+  color: var(--accent) !important;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    border-color: var(--border-glass);
+    background: var(--bg-card);
+  }
+  50% {
+    border-color: var(--accent);
+    background: rgba(34, 197, 94, 0.12);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+  }
+}
+
 /* ==================== Sync Error Banner ==================== */
 #sync-error-banner {
   background: rgba(244, 63, 94, 0.1);

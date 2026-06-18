@@ -18,7 +18,10 @@ async function getUserInfo() {
 
 function mergeVaults(local, remote) {
   const map = new Map();
+  let pulled = 0;
+  let pushed = 0;
   
+  // index remote accounts first
   if (Array.isArray(remote)) {
     remote.forEach(acc => {
       if (acc && acc.secret) {
@@ -27,11 +30,15 @@ function mergeVaults(local, remote) {
     });
   }
   
+  const localSecrets = new Set();
   if (Array.isArray(local)) {
     local.forEach(acc => {
       if (acc && acc.secret) {
+        localSecrets.add(acc.secret);
         const existing = map.get(acc.secret);
         if (!existing) {
+          // local-only account, will be pushed to remote
+          pushed++;
           map.set(acc.secret, acc);
         } else {
           const merged = { ...existing, ...acc };
@@ -44,7 +51,16 @@ function mergeVaults(local, remote) {
     });
   }
   
-  return Array.from(map.values());
+  // count remote-only accounts that local didn't have
+  if (Array.isArray(remote)) {
+    remote.forEach(acc => {
+      if (acc && acc.secret && !localSecrets.has(acc.secret)) {
+        pulled++;
+      }
+    });
+  }
+  
+  return { accounts: Array.from(map.values()), pulled, pushed };
 }
 
 function decodeBase64(str) {
@@ -95,12 +111,12 @@ async function handleGithubSync(data) {
     }
 
     // Bidirectional merge
-    const mergedAccounts = mergeVaults(data, remoteAccounts);
+    const mergeResult = mergeVaults(data, remoteAccounts);
 
     const profilePayload = {
       email: userEmail,
       updatedAt: new Date().toISOString(),
-      accounts: mergedAccounts
+      accounts: mergeResult.accounts
     };
 
     const putRes = await fetch(url, {
@@ -117,7 +133,13 @@ async function handleGithubSync(data) {
     });
 
     if (putRes.ok) {
-      return { success: true, profile: userEmail, mergedAccounts: mergedAccounts };
+      return {
+        success: true,
+        profile: userEmail,
+        mergedAccounts: mergeResult.accounts,
+        pulled: mergeResult.pulled,
+        pushed: mergeResult.pushed
+      };
     } else {
       const err = await putRes.json();
       if (putRes.status === 401) return { success: false, error: 'Token expired or invalid' };

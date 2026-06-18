@@ -255,7 +255,6 @@ class AuthenticatorApp {
           this.openSettings();
         } else {
           this.syncToGithub();
-          if (this.importModal) this.importModal.classList.remove('hidden');
         }
       });
     }
@@ -457,7 +456,7 @@ class AuthenticatorApp {
       return;
     }
 
-    if (!silent) this.showToast('Syncing to cloud...');
+    if (!silent) this.showToast('Syncing...');
     chrome.runtime.sendMessage({ action: 'githubSync', data: this.accounts }, (res) => {
       if (res && res.success) {
         if (res.mergedAccounts && Array.isArray(res.mergedAccounts)) {
@@ -466,7 +465,13 @@ class AuthenticatorApp {
           this.saveAccounts();
           this.render();
         }
-        if (!silent) this.showToast('Vault synced');
+        if (!silent) {
+          this.showToast(this.buildSyncMessage(res.pulled || 0, res.pushed || 0));
+        }
+        // flash the badge when new accounts were pulled from remote
+        if (res.pulled > 0) {
+          this.flashBadge(`${res.pulled} new`);
+        }
         this.setSyncError(false, '');
       } else {
         const reason = res ? res.error : 'Connection timeout';
@@ -474,6 +479,25 @@ class AuthenticatorApp {
         this.setSyncError(true, reason);
       }
     });
+  }
+
+  buildSyncMessage(pulled, pushed) {
+    if (pulled === 0 && pushed === 0) return 'Synced — up to date';
+    const parts = [];
+    if (pulled > 0) parts.push(`${pulled} pulled`);
+    if (pushed > 0) parts.push(`${pushed} pushed`);
+    return 'Synced — ' + parts.join(', ');
+  }
+
+  flashBadge(text) {
+    if (!this.statusText) return;
+    const original = this.statusText.textContent;
+    this.statusText.textContent = text;
+    this.statusBadge.classList.add('badge-flash');
+    setTimeout(() => {
+      this.statusText.textContent = original;
+      this.statusBadge.classList.remove('badge-flash');
+    }, 3000);
   }
 
   async fetchFromGithub() {
