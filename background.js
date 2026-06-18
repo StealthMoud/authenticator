@@ -16,6 +16,49 @@ async function getUserInfo() {
   });
 }
 
+function mergeVaults(local, remote) {
+  const map = new Map();
+  
+  if (Array.isArray(remote)) {
+    remote.forEach(acc => {
+      if (acc && acc.secret) {
+        map.set(acc.secret, acc);
+      }
+    });
+  }
+  
+  if (Array.isArray(local)) {
+    local.forEach(acc => {
+      if (acc && acc.secret) {
+        const existing = map.get(acc.secret);
+        if (!existing) {
+          map.set(acc.secret, acc);
+        } else {
+          const merged = { ...existing, ...acc };
+          merged.lastUsed = Math.max(existing.lastUsed || 0, acc.lastUsed || 0);
+          merged.label = acc.label || existing.label;
+          merged.issuer = acc.issuer || existing.issuer;
+          map.set(acc.secret, merged);
+        }
+      }
+    });
+  }
+  
+  return Array.from(map.values());
+}
+
+function decodeBase64(str) {
+  try {
+    return decodeURIComponent(escape(atob(str.replace(/\s/g, ''))));
+  } catch (e) {
+    return atob(str.replace(/\s/g, ''));
+  }
+}
+
+function encodeBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+
 async function handleGithubSync(data) {
   const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
   
@@ -29,8 +72,8 @@ async function handleGithubSync(data) {
   const url = `https://api.github.com/repos/${ghRepo}/contents/${fileName}`;
   
   try {
-    // check if the file already exists to get its sha for updates
     let sha;
+    let remoteAccounts = [];
     const getRes = await fetch(url, {
       headers: { 'Authorization': `token ${ghToken}` }
     });
@@ -38,17 +81,26 @@ async function handleGithubSync(data) {
     if (getRes.status === 200) {
       const existing = await getRes.json();
       sha = existing.sha;
+      try {
+        const decoded = decodeBase64(existing.content);
+        const parsed = JSON.parse(decoded);
+        remoteAccounts = parsed.accounts || [];
+      } catch (err) {
+        console.error('Failed to parse remote accounts:', err);
+      }
     } else if (getRes.status === 401) {
       return { success: false, error: 'Token expired or invalid' };
     } else if (getRes.status === 404) {
       // file doesn't exist yet, that's fine - first sync
     }
 
-    // build profile payload with metadata
+    // Bidirectional merge
+    const mergedAccounts = mergeVaults(data, remoteAccounts);
+
     const profilePayload = {
       email: userEmail,
       updatedAt: new Date().toISOString(),
-      accounts: data
+      accounts: mergedAccounts
     };
 
     const putRes = await fetch(url, {
@@ -59,25 +111,18 @@ async function handleGithubSync(data) {
       },
       body: JSON.stringify({
         message: `vault sync for ${userEmail}`,
-        content: btoa(JSON.stringify(profilePayload, null, 2)),
+        content: encodeBase64(JSON.stringify(profilePayload, null, 2)),
         sha: sha
       })
     });
 
     if (putRes.ok) {
-      return { success: true, profile: userEmail };
+      return { success: true, profile: userEmail, mergedAccounts: mergedAccounts };
     } else {
       const err = await putRes.json();
-      // provide clearer error messages for common failure modes
-      if (putRes.status === 401) {
-        return { success: false, error: 'Token expired or invalid' };
-      }
-      if (putRes.status === 404) {
-        return { success: false, error: 'Repository not found — check the path' };
-      }
-      if (putRes.status === 409) {
-        return { success: false, error: 'Conflict — try syncing again' };
-      }
+      if (putRes.status === 401) return { success: false, error: 'Token expired or invalid' };
+      if (putRes.status === 404) return { success: false, error: 'Repository not found — check the path' };
+      if (putRes.status === 409) return { success: false, error: 'Conflict — try syncing again' };
       return { success: false, error: err.message || 'Unknown error' };
     }
   } catch (e) {

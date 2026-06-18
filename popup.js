@@ -79,6 +79,11 @@ class AuthenticatorApp {
     this.startTimer();
     this.applyFiltersAndSort();
     this.updateConnectionStatus();
+
+    // Silently trigger pull-and-merge sync on startup if configured
+    if (this.ghToken && this.ghRepo) {
+      this.syncToGithub(true);
+    }
   }
 
   // detect which Chrome profile is running
@@ -442,24 +447,30 @@ class AuthenticatorApp {
     this.showToast('Cloud vault disconnected');
   }
 
-  async syncToGithub() {
+  async syncToGithub(silent = false) {
     if (!this.ghToken || !this.ghRepo) {
       // reload from storage in case it was set elsewhere
       await this.loadGithubConfig();
     }
     if (!this.ghToken || !this.ghRepo) {
-      this.openSettings();
+      if (!silent) this.openSettings();
       return;
     }
 
-    this.showToast('Syncing to cloud...');
+    if (!silent) this.showToast('Syncing to cloud...');
     chrome.runtime.sendMessage({ action: 'githubSync', data: this.accounts }, (res) => {
       if (res && res.success) {
-        this.showToast('Vault synced');
+        if (res.mergedAccounts && Array.isArray(res.mergedAccounts)) {
+          this.accounts = res.mergedAccounts;
+          this.filteredAccounts = [...this.accounts];
+          this.saveAccounts();
+          this.render();
+        }
+        if (!silent) this.showToast('Vault synced');
         this.setSyncError(false, '');
       } else {
         const reason = res ? res.error : 'Connection timeout';
-        this.showToast('Sync failed: ' + reason);
+        if (!silent) this.showToast('Sync failed: ' + reason);
         this.setSyncError(true, reason);
       }
     });
