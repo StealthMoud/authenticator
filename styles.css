@@ -521,7 +521,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: all var(--transition-slow) var(--spring-curve);
+  transition: transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -539,6 +539,37 @@ h1 {
 
 .account-item:active {
   transform: scale(0.98) translateX(2px);
+}
+
+.account-icon-wrapper {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: all var(--transition-fast) var(--spring-curve);
+}
+
+.account-item:hover .account-icon-wrapper {
+  background: hsla(250, 85%, 65%, 0.1);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.brand-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--transition-fast) var(--spring-curve);
+}
+
+.account-item:hover .brand-icon {
+  transform: scale(1.1);
 }
 
 /* Click/Copy custom spring feedback */
@@ -689,6 +720,8 @@ h1 {
   background: var(--bg-card-hover);
   border-color: var(--primary);
   box-shadow: 0 0 0 1px var(--primary-glow);
+  min-height: 130px;
+  overflow: visible !important;
 }
 
 .account-item.editing .account-info {
