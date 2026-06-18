@@ -126,10 +126,6 @@ AuthenticatorApp.prototype.render = function() {
       });
     } else {
       // normal display mode
-      const profileCount = acc.profile ? acc.profile.split(', ').length : 0;
-      const activeIdx = (acc.selectedProfileIndex !== undefined && acc.selectedProfileIndex < profileCount) ? acc.selectedProfileIndex : 0;
-      const currentEmail = profileCount > 0 ? acc.profile.split(', ')[activeIdx] : '';
-
       el.className = 'account-item';
       
       let algo = 'SHA-1';
@@ -157,16 +153,6 @@ AuthenticatorApp.prototype.render = function() {
           <div class="account-info">
             <span class="account-label">${this.escapeHtml(acc.label)}</span>
             <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
-            ${acc.profile ? `
-              <div class="account-profile-badges" data-profiles="${this.escapeHtml(acc.profile)}" data-index="${activeIdx}">
-                <span class="account-profile-badge" title="Imported from: ${this.escapeHtml(currentEmail)}">${this.escapeHtml(currentEmail)}</span>
-                ${profileCount > 1 ? `
-                  <button class="badge-cycle-btn" title="Cycle through profiles">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                  </button>
-                ` : ''}
-              </div>
-            ` : ''}
           </div>
           <div class="account-otp">--- ---</div>
         </div>
@@ -213,8 +199,8 @@ AuthenticatorApp.prototype.render = function() {
 
       // click on card body -> copy
       el.addEventListener('click', (e) => {
-        // dont copy if they clicked an action button or the cycle button
-        if (e.target.closest('.account-actions') || e.target.closest('.badge-cycle-btn') || e.target.closest('.account-card-details')) return;
+        // dont copy if they clicked an action button or card details
+        if (e.target.closest('.account-actions') || e.target.closest('.account-card-details')) return;
         const totp = new OTPAuth.TOTP({ secret: acc.secret });
         navigator.clipboard.writeText(totp.generate());
         this.showToast('Copied to clipboard');
@@ -283,27 +269,7 @@ AuthenticatorApp.prototype.render = function() {
         this.deleteAccount(acc.id);
       });
 
-      // action: cycle profile
-      const cycleBtn = el.querySelector('.badge-cycle-btn');
-      if (cycleBtn) {
-        cycleBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const container = cycleBtn.closest('.account-profile-badges');
-          if (container) {
-            const profiles = container.dataset.profiles.split(', ');
-            let idx = parseInt(container.dataset.index || '0', 10);
-            idx = (idx + 1) % profiles.length;
-            container.dataset.index = idx;
-            acc.selectedProfileIndex = idx;
-            this.saveAccounts();
-            const badge = container.querySelector('.account-profile-badge');
-            if (badge) {
-              badge.textContent = profiles[idx];
-              badge.title = `Imported from: ${profiles[idx]}`;
-            }
-          }
-        });
-      }
+
     }
 
     this.accountList.appendChild(el);

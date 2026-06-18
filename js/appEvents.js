@@ -139,34 +139,17 @@ AuthenticatorApp.prototype.setupEventListeners = function() {
 
   // empty state button delegation
   if (this.accountList) {
-     this.accountList.addEventListener('click', (e) => {
-       if (e.target) {
-         if (e.target.closest('#add-first-btn')) {
-           this.openImportModal('add');
-         } else if (e.target.closest('#restore-first-btn')) {
-           this.openImportModal('restore');
-           this.fetchFromGithub();
-         } else {
-           const cycleBtn = e.target.closest('.badge-cycle-btn');
-           if (cycleBtn) {
-             e.stopPropagation();
-             const container = cycleBtn.closest('.account-profile-badges');
-             if (container) {
-               const profiles = container.dataset.profiles.split(', ');
-               let idx = parseInt(container.dataset.index || '0', 10);
-               idx = (idx + 1) % profiles.length;
-               container.dataset.index = idx;
-               const badge = container.querySelector('.account-profile-badge');
-               if (badge) {
-                 badge.textContent = profiles[idx];
-                 badge.title = `Imported from: ${profiles[idx]}`;
-               }
-             }
-           }
-         }
-       }
-     });
-   }
+    this.accountList.addEventListener('click', (e) => {
+      if (e.target) {
+        if (e.target.closest('#add-first-btn')) {
+          this.openImportModal('add');
+        } else if (e.target.closest('#restore-first-btn')) {
+          this.openImportModal('restore');
+          this.fetchFromGithub();
+        }
+      }
+    });
+  }
 
   // file drop zone
   if (this.dropZone) {
