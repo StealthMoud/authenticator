@@ -197,27 +197,29 @@ AuthenticatorApp.prototype.render = function() {
           ` : ''}
         </div>`;
 
-      // click on card body -> copy
-      el.addEventListener('click', (e) => {
-        // dont copy if they clicked an action button or card details
-        if (e.target.closest('.account-actions') || e.target.closest('.account-card-details')) return;
-        const totp = new OTPAuth.TOTP({ secret: acc.secret });
-        navigator.clipboard.writeText(totp.generate());
-        this.showToast('Copied to clipboard');
-        acc.lastUsed = Date.now();
-        acc.useCount = (acc.useCount || 0) + 1;
-        this.saveAccounts(true);
+      // click on index number -> copy
+      const indexEl = el.querySelector('.account-index');
+      if (indexEl) {
+        indexEl.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const totp = new OTPAuth.TOTP({ secret: acc.secret });
+          navigator.clipboard.writeText(totp.generate());
+          this.showToast('Copied to clipboard');
+          acc.lastUsed = Date.now();
+          acc.useCount = (acc.useCount || 0) + 1;
+          this.saveAccounts(true);
 
-        const useCountEl = el.querySelector('.details-value-usecount');
-        if (useCountEl) useCountEl.textContent = acc.useCount;
-        const lastUsedEl = el.querySelector('.details-value-lastused');
-        if (lastUsedEl) lastUsedEl.textContent = new Date(acc.lastUsed).toLocaleDateString();
+          const useCountEl = el.querySelector('.details-value-usecount');
+          if (useCountEl) useCountEl.textContent = acc.useCount;
+          const lastUsedEl = el.querySelector('.details-value-lastused');
+          if (lastUsedEl) lastUsedEl.textContent = new Date(acc.lastUsed).toLocaleDateString();
 
-        el.classList.remove('copied-pulse');
-        void el.offsetWidth; // trigger reflow to restart keyframe animation
-        el.classList.add('copied-pulse');
-        setTimeout(() => el.classList.remove('copied-pulse'), 400);
-      });
+          el.classList.remove('copied-pulse');
+          void el.offsetWidth; // trigger reflow to restart keyframe animation
+          el.classList.add('copied-pulse');
+          setTimeout(() => el.classList.remove('copied-pulse'), 400);
+        });
+      }
 
       // action: explicit copy
       el.querySelector('.action-copy').addEventListener('click', (e) => {
