@@ -11,13 +11,13 @@ class AuthenticatorApp {
     this.privacyMode = false;
     this.currentEmail = '';
     this.loadedProfiles = [];
+    this.editingAccountId = null;
 
-    // cache dom elements
+    // cache dom refs
     this.accountList = document.getElementById('account-list');
     this.searchInput = document.getElementById('search-input');
     this.importBtn = document.getElementById('import-btn');
     this.importModal = document.getElementById('import-modal');
-    this.closeModalBtn = document.querySelector('.close-modal');
     this.dropZone = document.getElementById('drop-zone');
     this.fileInput = document.getElementById('file-input');
     this.statusMsg = document.getElementById('import-status');
@@ -33,12 +33,30 @@ class AuthenticatorApp {
     this.importSelectedGhBtn = document.getElementById('import-selected-profile');
     this.ghTokenInput = document.getElementById('gh-token');
     this.ghRepoInput = document.getElementById('gh-repo');
-    this.activeProfileEl = document.getElementById('active-profile');
     this.sortOrderBtn = document.getElementById('sort-order-btn');
     this.syncErrorBanner = document.getElementById('sync-error-banner');
+    this.syncErrorText = document.getElementById('sync-error-text');
     this.fixSyncBtn = document.getElementById('fix-sync-btn');
-    
-    // confirm overlay elements
+
+    // status badge
+    this.statusBadge = document.getElementById('status-badge');
+    this.statusText = document.getElementById('status-text');
+
+    // settings panel
+    this.settingsBtn = document.getElementById('settings-btn');
+    this.settingsModal = document.getElementById('settings-modal');
+    this.disconnectBtn = document.getElementById('disconnect-vault-btn');
+    this.settingsConnectedView = document.getElementById('settings-connected-view');
+    this.settingsSetupView = document.getElementById('settings-setup-view');
+    this.settingsRepoDisplay = document.getElementById('settings-repo-display');
+    this.settingsEmailDisplay = document.getElementById('settings-email-display');
+    this.settingsSyncStatus = document.getElementById('settings-sync-status');
+
+    // cloud fetch notice
+    this.cloudFetchNotice = document.getElementById('cloud-fetch-unavailable');
+    this.openSettingsFromImport = document.getElementById('open-settings-from-import');
+
+    // confirm overlay
     this.confirmOverlay = document.getElementById('confirm-overlay');
     this.confirmTitle = document.getElementById('confirm-title');
     this.confirmMessage = document.getElementById('confirm-message');
@@ -55,24 +73,26 @@ class AuthenticatorApp {
     this.setupEventListeners();
     this.startTimer();
     this.applyFiltersAndSort();
-    this.checkSyncStatus();
+    this.updateConnectionStatus();
   }
 
+  // detect which Chrome profile is running
   detectIdentity() {
     chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (info) => {
       this.currentEmail = info.email || 'offline-profile';
-      if (this.activeProfileEl) this.activeProfileEl.innerText = `Sync: ${this.currentEmail}`;
+      this.updateConnectionStatus();
     });
   }
 
   async loadAccounts() {
     return new Promise((resolve) => {
-      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError'], (result) => {
+      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError', 'syncErrorMessage'], (result) => {
         this.accounts = result[this.storageKey] || [];
         this.privacyMode = result.privacyMode || false;
         this.sortAscending = (result.sortAscending !== undefined) ? result.sortAscending : true;
         this.filteredAccounts = [...this.accounts];
         this.syncError = result.syncError || false;
+        this.syncErrorMessage = result.syncErrorMessage || '';
         this.updateOrderIcon();
         resolve();
       });
@@ -82,8 +102,10 @@ class AuthenticatorApp {
   async loadGithubConfig() {
     return new Promise((resolve) => {
       chrome.storage.local.get(['ghToken', 'ghRepo'], (result) => {
-        if (result.ghToken && this.ghTokenInput) this.ghTokenInput.value = result.ghToken;
-        if (result.ghRepo && this.ghRepoInput) this.ghRepoInput.value = result.ghRepo;
+        this.ghToken = result.ghToken || '';
+        this.ghRepo = result.ghRepo || '';
+        if (this.ghToken && this.ghTokenInput) this.ghTokenInput.value = this.ghToken;
+        if (this.ghRepo && this.ghRepoInput) this.ghRepoInput.value = this.ghRepo;
         resolve();
       });
     });
@@ -91,11 +113,88 @@ class AuthenticatorApp {
 
   async saveAccounts() {
     return new Promise((resolve) => {
-      chrome.storage.local.set({ [this.storageKey]: this.accounts }, () => {
-        resolve();
-      });
+      chrome.storage.local.set({ [this.storageKey]: this.accounts }, () => resolve());
     });
   }
+
+  // -- Connection Status --
+
+  updateConnectionStatus() {
+    if (!this.statusBadge || !this.statusText) return;
+
+    const hasConfig = this.ghToken && this.ghRepo;
+
+    // remove old state classes
+    this.statusBadge.classList.remove('status-connected', 'status-disconnected', 'status-error');
+
+    if (!hasConfig) {
+      this.statusBadge.classList.add('status-disconnected');
+      this.statusText.textContent = 'Not Configured';
+      this.syncErrorBanner.classList.add('hidden');
+    } else if (this.syncError) {
+      this.statusBadge.classList.add('status-error');
+      this.statusText.textContent = 'Sync Failed';
+      // show error banner with reason
+      this.syncErrorBanner.classList.remove('hidden');
+      if (this.syncErrorText) {
+        this.syncErrorText.textContent = this.syncErrorMessage || 'Cloud sync failed';
+      }
+    } else {
+      this.statusBadge.classList.add('status-connected');
+      const shortEmail = this.currentEmail.split('@')[0] || 'connected';
+      this.statusText.textContent = shortEmail;
+      this.syncErrorBanner.classList.add('hidden');
+    }
+
+    // update settings panel views
+    this.updateSettingsView();
+    // update cloud fetch availability in import modal
+    this.updateCloudFetchState();
+  }
+
+  updateSettingsView() {
+    if (!this.settingsConnectedView || !this.settingsSetupView) return;
+
+    const hasConfig = this.ghToken && this.ghRepo;
+
+    if (hasConfig) {
+      this.settingsConnectedView.classList.remove('hidden');
+      this.settingsSetupView.classList.add('hidden');
+      if (this.settingsRepoDisplay) this.settingsRepoDisplay.textContent = this.ghRepo;
+      if (this.settingsEmailDisplay) this.settingsEmailDisplay.textContent = this.currentEmail || '—';
+      if (this.settingsSyncStatus) {
+        if (this.syncError) {
+          this.settingsSyncStatus.textContent = 'Error';
+          this.settingsSyncStatus.className = 'connected-value status-fail';
+        } else {
+          this.settingsSyncStatus.textContent = 'Connected';
+          this.settingsSyncStatus.className = 'connected-value status-ok';
+        }
+      }
+    } else {
+      this.settingsConnectedView.classList.add('hidden');
+      this.settingsSetupView.classList.remove('hidden');
+    }
+  }
+
+  updateCloudFetchState() {
+    const hasConfig = this.ghToken && this.ghRepo;
+    if (this.cloudFetchNotice) {
+      this.cloudFetchNotice.classList.toggle('hidden', hasConfig);
+    }
+    if (this.fetchGithubBtn) {
+      this.fetchGithubBtn.disabled = !hasConfig;
+    }
+  }
+
+  setSyncError(hasError, message) {
+    this.syncError = hasError;
+    this.syncErrorMessage = message || '';
+    chrome.storage.local.set({ syncError: hasError, syncErrorMessage: message || '' });
+    this.updateConnectionStatus();
+  }
+
+  // -- Event Listeners --
 
   setupEventListeners() {
     if (this.searchInput) this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
@@ -103,25 +202,51 @@ class AuthenticatorApp {
 
     if (this.exportVaultBtn) {
       this.exportVaultBtn.addEventListener('click', () => {
-        if (this.accounts.length === 0) { this.showToast('no data to export'); return; }
-        this.confirmAction('Export Vault', 'Download local backup of your 2FA codes?', () => this.exportVault());
+        if (this.accounts.length === 0) { this.showToast('Nothing to export'); return; }
+        this.confirmAction('Export Backup', 'Download a local backup of your 2FA codes?', () => this.exportVault());
       });
     }
-    
+
     if (this.githubSyncBtn) this.githubSyncBtn.addEventListener('click', () => this.syncToGithub());
     if (this.saveGhConfigBtn) this.saveGhConfigBtn.addEventListener('click', () => this.saveGithubConfig());
     if (this.fetchGithubBtn) this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
-
     if (this.importSelectedGhBtn) this.importSelectedGhBtn.addEventListener('click', () => this.importFromSelectedProfile());
     if (this.importAllGhBtn) this.importAllGhBtn.addEventListener('click', () => this.importAllFromCloud());
 
+    // fix-sync opens settings, not import
     if (this.fixSyncBtn) {
-      this.fixSyncBtn.addEventListener('click', () => {
-        this.importModal.classList.remove('hidden');
-        document.getElementById('github-config').classList.remove('hidden');
+      this.fixSyncBtn.addEventListener('click', () => this.openSettings());
+    }
+
+    // status badge opens settings
+    if (this.statusBadge) {
+      this.statusBadge.addEventListener('click', () => this.openSettings());
+    }
+
+    // settings panel
+    if (this.settingsBtn) this.settingsBtn.addEventListener('click', () => this.openSettings());
+    const closeSettings = this.settingsModal?.querySelector('.close-settings');
+    if (closeSettings) closeSettings.addEventListener('click', () => this.closeSettings());
+    window.addEventListener('click', (e) => {
+      if (e.target === this.settingsModal) this.closeSettings();
+    });
+
+    // disconnect vault
+    if (this.disconnectBtn) {
+      this.disconnectBtn.addEventListener('click', () => {
+        this.confirmAction('Disconnect Vault', 'Remove cloud sync configuration? Your cloud data will stay intact.', () => this.disconnectVault());
       });
     }
 
+    // link from import modal -> settings
+    if (this.openSettingsFromImport) {
+      this.openSettingsFromImport.addEventListener('click', () => {
+        this.importModal.classList.add('hidden');
+        this.openSettings();
+      });
+    }
+
+    // sort order toggle
     if (this.sortOrderBtn) {
       this.sortOrderBtn.addEventListener('click', () => {
         this.sortAscending = !this.sortAscending;
@@ -131,17 +256,7 @@ class AuthenticatorApp {
       });
     }
 
-    if (this.ghTokenInput) {
-      this.ghTokenInput.addEventListener('input', () => {
-        chrome.storage.local.set({ ghToken: this.ghTokenInput.value.trim() });
-      });
-    }
-    if (this.ghRepoInput) {
-      this.ghRepoInput.addEventListener('input', () => {
-        chrome.storage.local.set({ ghRepo: this.ghRepoInput.value.trim() });
-      });
-    }
-
+    // sort chips
     document.querySelectorAll('.sort-chip').forEach(chip => {
       if (chip.dataset.sort) {
         chip.addEventListener('click', (e) => {
@@ -153,23 +268,35 @@ class AuthenticatorApp {
       }
     });
 
+    // clear all accounts (now in settings panel)
     if (this.clearAllBtn) {
       this.clearAllBtn.addEventListener('click', () => {
         if (this.accounts.length === 0) {
-          this.showToast('no data to clear'); return;
+          this.showToast('No data to clear'); return;
         }
-        this.confirmAction('Destructive Action', 'purge all data? u cant undo this!', () => this.clearAllAccounts());
+        this.confirmAction('Reset Vault', 'Delete all accounts from this device? This cannot be undone.', () => this.clearAllAccounts());
       });
     }
 
-    const toggleModal = () => {
-      this.importModal.classList.toggle('hidden');
-      document.getElementById('github-config').classList.add('hidden');
-    };
-    if (this.importBtn) this.importBtn.addEventListener('click', toggleModal);
-    if (this.closeModalBtn) this.closeModalBtn.addEventListener('click', toggleModal);
-    window.addEventListener('click', (e) => { if (e.target === this.importModal) toggleModal(); });
+    // import modal toggle
+    const toggleImport = () => this.importModal.classList.toggle('hidden');
+    if (this.importBtn) this.importBtn.addEventListener('click', toggleImport);
 
+    // close button inside import modal
+    const closeImportBtn = this.importModal?.querySelector('.close-modal');
+    if (closeImportBtn) closeImportBtn.addEventListener('click', toggleImport);
+    window.addEventListener('click', (e) => { if (e.target === this.importModal) toggleImport(); });
+
+    // add-first-btn in empty state (delegated to handle dynamic rendering)
+    if (this.accountList) {
+      this.accountList.addEventListener('click', (e) => {
+        if (e.target && e.target.closest('#add-first-btn')) {
+          toggleImport();
+        }
+      });
+    }
+
+    // file drop zone
     if (this.dropZone) {
       this.dropZone.addEventListener('click', () => this.fileInput.click());
       this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
@@ -182,6 +309,17 @@ class AuthenticatorApp {
         if (file) this.processFile(file);
       });
     }
+  }
+
+  openSettings() {
+    if (this.settingsModal) {
+      this.settingsModal.classList.remove('hidden');
+      this.updateSettingsView();
+    }
+  }
+
+  closeSettings() {
+    if (this.settingsModal) this.settingsModal.classList.add('hidden');
   }
 
   confirmAction(title, message, onConfirm) {
@@ -219,73 +357,91 @@ class AuthenticatorApp {
     }
   }
 
-  checkSyncStatus() {
-    if (this.syncError) {
-      this.syncErrorBanner.classList.remove('hidden');
-    } else {
-      this.syncErrorBanner.classList.add('hidden');
-    }
-  }
-
-  setSyncError(hasError) {
-    this.syncError = hasError;
-    chrome.storage.local.set({ syncError: hasError });
-    this.checkSyncStatus();
-  }
-
-  // --- github logic ---
+  // -- GitHub / Cloud Sync --
 
   async saveGithubConfig() {
     const token = this.ghTokenInput.value.trim();
     const repo = this.ghRepoInput.value.trim();
-    if (!token || !repo) { this.showToast('missing fields'); return; }
+    if (!token || !repo) { this.showToast('Fill in both fields'); return; }
+
+    this.ghToken = token;
+    this.ghRepo = repo;
     await chrome.storage.local.set({ ghToken: token, ghRepo: repo });
-    document.getElementById('github-config').classList.add('hidden');
-    this.showToast('config saved sucsesfully');
-    this.setSyncError(false); // reset error on new config
+    this.setSyncError(false, '');
+    this.showToast('Cloud vault linked');
+    this.closeSettings();
     this.syncToGithub();
   }
 
+  async disconnectVault() {
+    this.ghToken = '';
+    this.ghRepo = '';
+    await chrome.storage.local.remove(['ghToken', 'ghRepo', 'syncError', 'syncErrorMessage']);
+    this.syncError = false;
+    this.syncErrorMessage = '';
+    if (this.ghTokenInput) this.ghTokenInput.value = '';
+    if (this.ghRepoInput) this.ghRepoInput.value = '';
+    this.updateConnectionStatus();
+    this.showToast('Cloud vault disconnected');
+  }
+
   async syncToGithub() {
-    const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
-    if (!ghToken || !ghRepo) {
-      this.importModal.classList.remove('hidden');
-      document.getElementById('github-config').classList.remove('hidden');
+    if (!this.ghToken || !this.ghRepo) {
+      // reload from storage in case it was set elsewhere
+      await this.loadGithubConfig();
+    }
+    if (!this.ghToken || !this.ghRepo) {
+      this.openSettings();
       return;
     }
 
-    this.showToast('syncing to cloude...');
+    this.showToast('Syncing to cloud...');
     chrome.runtime.sendMessage({ action: 'githubSync', data: this.accounts }, (res) => {
       if (res && res.success) {
-        this.showToast('vault synched!');
-        this.setSyncError(false);
+        this.showToast('Vault synced');
+        this.setSyncError(false, '');
       } else {
-        this.showToast('sync faild: ' + (res ? res.error : 'timeout'));
-        this.setSyncError(true);
+        const reason = res ? res.error : 'Connection timeout';
+        this.showToast('Sync failed: ' + reason);
+        this.setSyncError(true, reason);
       }
     });
   }
 
   async fetchFromGithub() {
-    const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
-    if (!ghToken || !ghRepo) { this.showToast('setup github first'); return; }
-    this.showToast('fetching profiles...');
-    const url = `https://api.github.com/repos/${ghRepo}/contents/profiles`;
+    if (!this.ghToken || !this.ghRepo) {
+      await this.loadGithubConfig();
+    }
+    if (!this.ghToken || !this.ghRepo) {
+      this.showToast('Set up cloud vault in Settings first');
+      return;
+    }
+
+    this.showToast('Fetching cloud profiles...');
+    const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles`;
     try {
-      const res = await fetch(url, { headers: { 'Authorization': `token ${ghToken}` } });
+      const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
       if (res.ok) {
         const files = await res.json();
         this.loadedProfiles = [];
-        for(let f of files) {
+        for (let f of files) {
           if (f.name.endsWith('.json')) {
             const dataRes = await fetch(f.download_url);
             const profileData = await dataRes.json();
             this.loadedProfiles.push(profileData);
           }
         }
-        this.renderProfileSelection();
-      } else { this.showToast('no cloud profiles found'); }
-    } catch (e) { this.showToast('network error'); }
+        if (this.loadedProfiles.length === 0) {
+          this.showToast('No profiles found in cloud vault');
+        } else {
+          this.renderProfileSelection();
+        }
+      } else {
+        this.showToast('No profiles found in cloud vault');
+      }
+    } catch (e) {
+      this.showToast('Network error — check connection');
+    }
   }
 
   renderProfileSelection() {
@@ -324,13 +480,13 @@ class AuthenticatorApp {
   }
 
   importFromSelectedProfile() {
-    if (this.selectedProfileIndex === undefined) { this.showToast('select profile first'); return; }
+    if (this.selectedProfileIndex === undefined) { this.showToast('Select a profile first'); return; }
     const profile = this.loadedProfiles[this.selectedProfileIndex];
     let addedCount = 0;
     profile.accounts.forEach(acc => { if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) addedCount++; });
     this.applyFiltersAndSort(); this.saveAccounts();
-    this.showToast(`imported ${addedCount} accounts`);
-    this.syncToGithub(); // sync back to current profile
+    this.showToast(`Imported ${addedCount} accounts`);
+    this.syncToGithub();
   }
 
   importAllFromCloud() {
@@ -339,8 +495,8 @@ class AuthenticatorApp {
       profile.accounts.forEach(acc => { if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) addedCount++; });
     });
     this.applyFiltersAndSort(); this.saveAccounts();
-    this.showToast(`merged ${addedCount} accounts from all profiles`);
-    this.syncToGithub(); // sync back to current profile
+    this.showToast(`Merged ${addedCount} accounts from all profiles`);
+    this.syncToGithub();
   }
 
   addAccountNoRender(secret, issuer, label, uri) {
@@ -349,12 +505,12 @@ class AuthenticatorApp {
     return true;
   }
 
-  // --- core logic ---
+  // -- Core: QR handling --
 
   handleFileSelect(e) { const file = e.target.files[0]; if (file) this.processFile(file); }
 
   async processFile(file) {
-    if (!file || !file.type.startsWith('image/')) { this.showStatus('Not an image.', 'error'); return; }
+    if (!file || !file.type.startsWith('image/')) { this.showStatus('Not a valid image file', 'error'); return; }
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
@@ -366,7 +522,7 @@ class AuthenticatorApp {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, canvas.width, canvas.height);
         if (code) this.handleQRCode(code.data);
-        else this.showStatus('QR not found.', 'error');
+        else this.showStatus('No QR code found in image', 'error');
       };
       img.src = e.target.result;
     };
@@ -376,18 +532,78 @@ class AuthenticatorApp {
   handleQRCode(uri) {
     try {
       const totp = OTPAuth.URI.parse(uri);
-      const added = this.addAccount(totp.secret.base32, totp.issuer || 'Other', totp.label || 'Login', uri);
-      if (added) { this.showStatus('Success!', 'success'); setTimeout(() => this.importModal.classList.add('hidden'), 1000); }
-    } catch (e) { this.showStatus('Format error.', 'error'); }
+      const added = this.addAccount(totp.secret.base32, totp.issuer || 'Unknown', totp.label || 'Account', uri);
+      if (added) {
+        this.showStatus('Account added', 'success');
+        setTimeout(() => this.importModal.classList.add('hidden'), 800);
+      } else {
+        this.showStatus('Account already exists', 'error');
+      }
+    } catch (e) {
+      this.showStatus('Invalid QR code format', 'error');
+    }
   }
 
   addAccount(secret, issuer, label, uri) {
     if (this.accounts.some(a => a.secret === secret)) return false;
     this.accounts.push({ id: Date.now(), secret, issuer, label, uri, lastUsed: 0 });
     this.applyFiltersAndSort(); this.saveAccounts();
-    this.syncToGithub(); // auto sync on add
+    this.syncToGithub();
     return true;
   }
+
+  // -- Per-account actions --
+
+  deleteAccount(id) {
+    this.confirmAction('Delete Account', 'Remove this account? This cannot be undone.', () => {
+      this.accounts = this.accounts.filter(a => a.id !== id);
+      this.applyFiltersAndSort();
+      this.saveAccounts();
+      this.syncToGithub();
+      this.showToast('Account removed');
+    });
+  }
+
+  startEdit(id) {
+    this.editingAccountId = id;
+    this.render();
+
+    // focus the first edit field after render
+    const card = this.accountList.querySelector(`[data-id="${id}"]`);
+    if (card) {
+      const firstInput = card.querySelector('.edit-field');
+      if (firstInput) firstInput.focus();
+    }
+  }
+
+  saveEdit(id) {
+    const card = this.accountList.querySelector(`[data-id="${id}"]`);
+    if (!card) return;
+
+    const issuerInput = card.querySelector('.edit-issuer');
+    const labelInput = card.querySelector('.edit-label');
+    const acc = this.accounts.find(a => a.id == id);
+    if (!acc) return;
+
+    const newIssuer = issuerInput?.value.trim();
+    const newLabel = labelInput?.value.trim();
+
+    if (newIssuer) acc.issuer = newIssuer;
+    if (newLabel) acc.label = newLabel;
+
+    this.editingAccountId = null;
+    this.applyFiltersAndSort();
+    this.saveAccounts();
+    this.syncToGithub();
+    this.showToast('Account updated');
+  }
+
+  cancelEdit() {
+    this.editingAccountId = null;
+    this.render();
+  }
+
+  // -- Sorting & Filtering --
 
   applyFiltersAndSort() {
     const term = this.searchInput.value.toLowerCase().trim();
@@ -411,6 +627,8 @@ class AuthenticatorApp {
     this.render();
   }
 
+  // -- Timer --
+
   startTimer() { this.updateCodes(); setInterval(() => this.updateCodes(), 1000); }
 
   updateCodes() {
@@ -418,47 +636,186 @@ class AuthenticatorApp {
     if (this.progressBar) this.progressBar.style.width = `${progress}%`;
     document.querySelectorAll('.account-item').forEach(item => {
       const acc = this.accounts.find(a => a.id == item.dataset.id);
-      if (acc) {
+      if (acc && !item.classList.contains('editing')) {
         const totp = new OTPAuth.TOTP({ secret: acc.secret });
-        item.querySelector('.account-otp').innerText = totp.generate().replace(/(\d{3})/, '$1 ');
+        const otpEl = item.querySelector('.account-otp');
+        if (otpEl) otpEl.innerText = totp.generate().replace(/(\d{3})/, '$1 ');
       }
     });
   }
 
+  // -- Render --
+
   render() {
     if (!this.accountList) return;
     this.accountList.classList.toggle('privacy-enabled', this.privacyMode);
+
+    // toggle privacy icon
+    const eyeOpen = this.privacyBtn?.querySelector('.eye-open');
+    const eyeClosed = this.privacyBtn?.querySelector('.eye-closed');
+    if (eyeOpen && eyeClosed) {
+      eyeOpen.classList.toggle('hidden', this.privacyMode);
+      eyeClosed.classList.toggle('hidden', !this.privacyMode);
+    }
+
     if (this.filteredAccounts.length === 0) {
-      this.accountList.innerHTML = '<div class="empty-state">Nothing found.</div>';
+      if (this.accounts.length === 0) {
+        this.accountList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            </div>
+            <p>No accounts yet</p>
+            <button id="add-first-btn">Add Your First Account</button>
+          </div>`;
+      } else {
+        this.accountList.innerHTML = '<div class="empty-state"><p>No matching accounts</p></div>';
+      }
       return;
     }
+
     this.accountList.innerHTML = '';
-    this.filteredAccounts.forEach(acc => {
+    this.filteredAccounts.forEach((acc, i) => {
       const el = document.createElement('div');
-      el.className = 'account-item'; el.dataset.id = acc.id;
-      el.innerHTML = `<div class="account-info"><span class="account-label">${acc.label}</span><span class="account-issuer">${acc.issuer}</span></div><div class="account-otp">--- ---</div>`;
-      el.onclick = () => {
-        const totp = new OTPAuth.TOTP({ secret: acc.secret });
-        navigator.clipboard.writeText(totp.generate());
-        this.showToast('copid to clipboard');
-        acc.lastUsed = Date.now();
-        this.saveAccounts();
-      };
+      el.dataset.id = acc.id;
+      el.style.animationDelay = `${i * 0.05}s`;
+
+      if (this.editingAccountId === acc.id) {
+        // inline edit mode
+        el.className = 'account-item editing';
+        el.innerHTML = `
+          <div class="account-info">
+            <input type="text" class="edit-field edit-label" value="${this.escapeHtml(acc.label)}" placeholder="Label">
+            <input type="text" class="edit-field edit-issuer" value="${this.escapeHtml(acc.issuer)}" placeholder="Issuer">
+            <div class="edit-actions">
+              <button class="edit-save">Save</button>
+              <button class="edit-cancel">Cancel</button>
+            </div>
+          </div>`;
+
+        // key handler for Enter/Escape
+        el.querySelectorAll('.edit-field').forEach(field => {
+          field.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.saveEdit(acc.id);
+            if (e.key === 'Escape') this.cancelEdit();
+          });
+        });
+        el.querySelector('.edit-save').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.saveEdit(acc.id);
+        });
+        el.querySelector('.edit-cancel').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.cancelEdit();
+        });
+      } else {
+        // normal display mode
+        el.className = 'account-item';
+        el.innerHTML = `
+          <div class="account-info">
+            <span class="account-label">${this.escapeHtml(acc.label)}</span>
+            <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
+          </div>
+          <div class="account-otp">--- ---</div>
+          <div class="account-actions">
+            <button class="action-copy" title="Copy code">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            </button>
+            <button class="action-edit" title="Edit account">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+            <button class="action-delete" title="Delete account">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </button>
+          </div>`;
+
+        // click on card body -> copy
+        el.addEventListener('click', (e) => {
+          // dont copy if they clicked an action button
+          if (e.target.closest('.account-actions')) return;
+          const totp = new OTPAuth.TOTP({ secret: acc.secret });
+          navigator.clipboard.writeText(totp.generate());
+          this.showToast('Copied to clipboard');
+          acc.lastUsed = Date.now();
+          this.saveAccounts();
+        });
+
+        // action: explicit copy
+        el.querySelector('.action-copy').addEventListener('click', (e) => {
+          e.stopPropagation();
+          const totp = new OTPAuth.TOTP({ secret: acc.secret });
+          navigator.clipboard.writeText(totp.generate());
+          this.showToast('Copied to clipboard');
+          acc.lastUsed = Date.now();
+          this.saveAccounts();
+        });
+
+        // action: edit
+        el.querySelector('.action-edit').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.startEdit(acc.id);
+        });
+
+        // action: delete
+        el.querySelector('.action-delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.deleteAccount(acc.id);
+        });
+      }
+
       this.accountList.appendChild(el);
     });
   }
 
-  togglePrivacyMode() { this.privacyMode = !this.privacyMode; chrome.storage.local.set({ privacyMode: this.privacyMode }); this.render(); }
-  showToast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.innerText = msg; if (this.toastContainer) this.toastContainer.appendChild(t); setTimeout(() => t.remove(), 2500); }
-  showStatus(msg, type) { if (this.statusMsg) { this.statusMsg.innerText = msg; this.statusMsg.className = `status-message status-${type}`; this.statusMsg.style.display = 'block'; } }
-  clearAllAccounts() { this.accounts = []; this.saveAccounts(); this.render(); this.syncToGithub(); }
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // -- Utilities --
+
+  togglePrivacyMode() {
+    this.privacyMode = !this.privacyMode;
+    chrome.storage.local.set({ privacyMode: this.privacyMode });
+    this.render();
+  }
+
+  showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.innerText = msg;
+    if (this.toastContainer) this.toastContainer.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+  }
+
+  showStatus(msg, type) {
+    if (this.statusMsg) {
+      this.statusMsg.innerText = msg;
+      this.statusMsg.className = `status-message status-${type}`;
+      this.statusMsg.style.display = 'block';
+    }
+  }
+
+  clearAllAccounts() {
+    this.accounts = [];
+    this.saveAccounts();
+    this.render();
+    this.syncToGithub();
+    this.closeSettings();
+    this.showToast('Vault cleared');
+  }
+
   exportVault() {
     const backupData = JSON.stringify(this.accounts, null, 2);
     const blob = new Blob([backupData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `auth_vault_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    this.showToast('vault exported safely');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `auth_vault_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    this.showToast('Backup file downloaded');
   }
 }
 

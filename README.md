@@ -1,48 +1,49 @@
 # Authenticator
 
-A premium, secure, and beautiful Chrome extension for managing your two-factor authentication (2FA) codes. Built with a focus on privacy and elite-tier user experience.
+A premium, secure, and beautiful Chrome extension for managing two-factor authentication (2FA) codes. Built with a focus on absolute privacy, fluid glassmorphism aesthetics, and clean user experience.
 
-## ✨ Key Features
+## Key Features
 
 - **Elite UI/UX**: State-of-the-art glassmorphism design with mesh gradients, backdrop blurs, and reactive hover animations.
-- **Autonomous Cloud Sync**: Real-time synchronization to a private GitHub repository. Never lose your 2FA seeds again.
-- **Multi-Profile Mastery**: Automatic detection of Chrome profile identities. Sync separate vaults for work, personal, and secondary accounts under one GitHub repo.
-- **Privacy Mode**: One-click masking of sensitive labels and OTP codes for secure usage in public spaces.
+- **Connection Status Badge**: Color-coded status badge in the header shows real-time sync states. Click the badge to open the Settings panel instantly.
+- **Dedicated Settings**: Accessed via the gear icon. Setup and configure your GitHub cloud sync, disconnect your vault, or perform a complete local reset from the Danger Zone.
+- **Autonomous Cloud Sync**: Real-time synchronization to a private GitHub repository. No external servers or third parties ever see your secrets.
+- **Multi-Profile Vaults**: Automatic detection of Chrome profile identities. Supports syncing separate vaults for different profiles (e.g., work, personal) under a single GitHub repository.
+- **Inline Editing & Management**: Actions appear on hover. Copy TOTP codes, edit issuer/label fields inline, or delete accounts with full safety confirmations.
+- **Privacy Mode**: Instantly mask sensitive labels, issuer names, and OTP codes for secure usage in public spaces.
 - **Dynamic Sorting & Filtering**:
-  - **Smart Name Sort**: Intelligent alphabetical grouping by issuer and account label.
-  - **A-Z/Z-A Toggle**: Flip sorting direction instantly with a dedicated order toggle.
-  - **Usage Based**: Automatically prioritizes your most frequently accessed codes.
-- **Intelligent Recovery**:
-  - **Cloud Fetch**: Scan your entire GitHub vault and selectively import accounts from any profile found.
-  - **Bulk Merge**: One-click restoration of all cloud-synced accounts into your current profile.
-- **Local Resilience**: Export your entire vault to a local JSON file for offline backups.
+  - **Smart Name Sort**: Alphabetical grouping by issuer and account label.
+  - **A-Z / Z-A Toggle**: Flip sorting direction instantly.
+  - **Usage-Based**: Automatically tracks and prioritizes your most frequently accessed codes.
+- **Flexible Data Mobility**:
+  - **Cloud Fetch**: Scan your GitHub vault and merge profile datasets with one click.
+  - **Local Backup**: Export or import your entire vault to/from a local JSON file.
 
-## 🚀 Installation
+## Installation
 
 1. Download or clone this repository.
 2. Open Chrome and navigate to `chrome://extensions/`.
 3. Enable **Developer mode** in the top right corner.
 4. Click **Load unpacked** and select the extension folder.
 
-## ☁️ Cloud Sync Setup
+## Cloud Sync Setup
 
 1. Create a **Private** repository on GitHub (e.g., `authenticator-vault`).
 2. Generate a **Personal Access Token (classic)** with the `repo` scope.
-3. Open the **Cloud Sync** panel in the app and paste your token and repository path (`username/repo`).
-4. The app will automatically sync your accounts and provide a persistent alert if the connection ever fails.
+3. Open the extension, click the gear icon to open **Settings**, and enter your GitHub token, repository path (`username/repo`), and optional target file path.
+4. Click **Link Cloud Vault** to connect. Your vault will automatically sync in the background.
 
-## 🛠️ Usage
+## Usage
 
-- **Add Account**: Click the `+` icon to upload or drop a QR code image.
-- **Copy Code**: Click an account card to copy the TOTP code. The item will expand on hover to show full details.
-- **Sync**: Click **Cloud Sync** in the footer to manage your GitHub vault.
-- **Privacy**: Use the Eye icon to mask/unmask your vault data instantly.
-- **Export**: Use **Export File** to save a local backup of your secrets.
-- **Reset**: Purge all local data using the **Reset Vault** action.
+- **Add Account**: Click the `+` button in the header to import a QR code image or paste a raw secret key.
+- **Copy TOTP Code**: Click an account card or hover over it and click the copy icon.
+- **Edit/Delete**: Hover over any card to reveal edit (pencil) and delete (trash) controls.
+- **Toggle Privacy Mode**: Click the eye icon in the header to hide or reveal codes and issuer names.
+- **Sync/Backup/Restore**: Click **Cloud Sync** or **Export Backup** in the footer to import local files, backup data, or restore from the cloud vault.
 
-## 🔒 Security
+## Security & Privacy
 
-Privacy is the core pillar of this extension.
-- **Local First**: All data is stored in `chrome.storage.local`.
-- **Private Cloud**: Synchronization uses your own private GitHub infrastructure—no third-party servers see your secrets.
-- **Isolated Profiles**: Data from different Chrome profiles is saved in distinct files to prevent cross-contamination.
+Privacy is the core pillar of this project.
+- **Local First**: All secrets are stored securely within your browser's local sandbox using `chrome.storage.local`.
+- **Zero Third-Party Servers**: Synchronization communicates directly with the GitHub API from your browser.
+- **Isolated Vault Files**: Separate browser profiles write to separate files in your repository, preventing cross-profile data leakage.

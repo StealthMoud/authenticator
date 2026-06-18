@@ -1,10 +1,10 @@
 /* global OTPAuth */
 
-// background worker for github sync
+// background worker for github sync operations
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'githubSync') {
     handleGithubSync(request.data).then(sendResponse);
-    return true; // keep channel open
+    return true; // keep the message channel open for async
   }
 });
 
@@ -20,16 +20,16 @@ async function handleGithubSync(data) {
   const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
   
   if (!ghToken || !ghRepo) {
-    return { success: false, error: 'GitHub not configured' };
+    return { success: false, error: 'Cloud vault not configured' };
   }
 
   const userEmail = await getUserInfo();
-  // we save each profile in its own file under a profiles directory
+  // each Chrome profile gets its own file inside a profiles/ directory
   const fileName = `profiles/${userEmail.replace(/[@.]/g, '_')}.json`;
   const url = `https://api.github.com/repos/${ghRepo}/contents/${fileName}`;
   
   try {
-    // 1. get existing file sha if it exists
+    // check if the file already exists to get its sha for updates
     let sha;
     const getRes = await fetch(url, {
       headers: { 'Authorization': `token ${ghToken}` }
@@ -38,9 +38,13 @@ async function handleGithubSync(data) {
     if (getRes.status === 200) {
       const existing = await getRes.json();
       sha = existing.sha;
+    } else if (getRes.status === 401) {
+      return { success: false, error: 'Token expired or invalid' };
+    } else if (getRes.status === 404) {
+      // file doesn't exist yet, that's fine - first sync
     }
 
-    // 2. upload/update file with profile metadata
+    // build profile payload with metadata
     const profilePayload = {
       email: userEmail,
       updatedAt: new Date().toISOString(),
@@ -64,9 +68,19 @@ async function handleGithubSync(data) {
       return { success: true, profile: userEmail };
     } else {
       const err = await putRes.json();
-      return { success: false, error: err.message };
+      // provide clearer error messages for common failure modes
+      if (putRes.status === 401) {
+        return { success: false, error: 'Token expired or invalid' };
+      }
+      if (putRes.status === 404) {
+        return { success: false, error: 'Repository not found — check the path' };
+      }
+      if (putRes.status === 409) {
+        return { success: false, error: 'Conflict — try syncing again' };
+      }
+      return { success: false, error: err.message || 'Unknown error' };
     }
   } catch (e) {
-    return { success: false, error: e.message };
+    return { success: false, error: e.message || 'Network error' };
   }
 }
