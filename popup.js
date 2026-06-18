@@ -68,6 +68,12 @@ class AuthenticatorApp {
     this.confirmCancelBtn = document.getElementById('confirm-cancel-btn');
     this.confirmProceedBtn = document.getElementById('confirm-proceed-btn');
 
+    // import modal subviews
+    this.importModalTitle = document.getElementById('import-title');
+    this.importModalSubtitle = document.getElementById('import-subtitle');
+    this.importDivider = document.getElementById('import-divider');
+    this.githubRestoreSection = document.getElementById('github-restore-section');
+
     this.init();
   }
 
@@ -331,23 +337,21 @@ class AuthenticatorApp {
       });
     }
 
-    // import modal toggle
-    const toggleImport = () => this.importModal.classList.toggle('hidden');
-    if (this.importBtn) this.importBtn.addEventListener('click', toggleImport);
+    // import modal trigger & close
+    if (this.importBtn) this.importBtn.addEventListener('click', () => this.openImportModal('all'));
 
-    // close button inside import modal
     const closeImportBtn = this.importModal?.querySelector('.close-modal');
-    if (closeImportBtn) closeImportBtn.addEventListener('click', toggleImport);
-    window.addEventListener('click', (e) => { if (e.target === this.importModal) toggleImport(); });
+    if (closeImportBtn) closeImportBtn.addEventListener('click', () => this.closeImportModal());
+    window.addEventListener('click', (e) => { if (e.target === this.importModal) this.closeImportModal(); });
 
     // empty state button delegation
     if (this.accountList) {
        this.accountList.addEventListener('click', (e) => {
          if (e.target) {
            if (e.target.closest('#add-first-btn')) {
-             toggleImport();
+             this.openImportModal('add');
            } else if (e.target.closest('#restore-first-btn')) {
-             toggleImport();
+             this.openImportModal('restore');
              this.fetchFromGithub();
            }
          }
@@ -381,6 +385,37 @@ class AuthenticatorApp {
       this.settingsModal.classList.add('hidden');
       this.isEditingConfig = false;
       this.updateSettingsView();
+    }
+  }
+
+  openImportModal(mode = 'all') {
+    if (!this.importModal) return;
+    this.importModal.classList.remove('hidden');
+
+    if (mode === 'all') {
+      if (this.importModalTitle) this.importModalTitle.textContent = 'Add Account';
+      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code image or restore from your cloud vault.';
+      if (this.dropZone) this.dropZone.classList.remove('hidden');
+      if (this.importDivider) this.importDivider.classList.remove('hidden');
+      if (this.githubRestoreSection) this.githubRestoreSection.classList.remove('hidden');
+    } else if (mode === 'add') {
+      if (this.importModalTitle) this.importModalTitle.textContent = 'Add Account';
+      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code image to add your 2FA account.';
+      if (this.dropZone) this.dropZone.classList.remove('hidden');
+      if (this.importDivider) this.importDivider.classList.add('hidden');
+      if (this.githubRestoreSection) this.githubRestoreSection.classList.add('hidden');
+    } else if (mode === 'restore') {
+      if (this.importModalTitle) this.importModalTitle.textContent = 'Restore Cloud Data';
+      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Select and restore your profiles from the linked cloud vault.';
+      if (this.dropZone) this.dropZone.classList.add('hidden');
+      if (this.importDivider) this.importDivider.classList.add('hidden');
+      if (this.githubRestoreSection) this.githubRestoreSection.classList.remove('hidden');
+    }
+  }
+
+  closeImportModal() {
+    if (this.importModal) {
+      this.importModal.classList.add('hidden');
     }
   }
 
@@ -632,7 +667,7 @@ class AuthenticatorApp {
       const added = this.addAccount(totp.secret.base32, totp.issuer || 'Unknown', totp.label || 'Account', uri);
       if (added) {
         this.showStatus('Account added', 'success');
-        setTimeout(() => this.importModal.classList.add('hidden'), 800);
+        setTimeout(() => this.closeImportModal(), 800);
       } else {
         this.showStatus('Account already exists', 'error');
       }
