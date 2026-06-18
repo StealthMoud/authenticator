@@ -1221,7 +1221,7 @@ class AuthenticatorApp {
   getIssuerIcon(issuer) {
     const clean = (issuer || '').toLowerCase().trim();
     if (clean.includes('google')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 7.54 3.42l-2.83 2.83A6 6 0 1 0 18 12h-6V8h10a10 10 0 0 1-10 10A10 10 0 0 1 12 2z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.98 0-.74-.08-1.3-.18-1.85H12.24z"/></svg>`;
     }
     if (clean.includes('github')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
@@ -1251,10 +1251,10 @@ class AuthenticatorApp {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 13.29-1.92-5.9a1 1 0 0 0-.96-.69h-2.14l-1.98-6.1a1 1 0 0 0-1.9 0L11 6.7H8.86a1 1 0 0 0-.96.69l-1.92 5.9a1 1 0 0 0 .36 1.12l8.3 6a1 1 0 0 0 1.18 0l8.3-6a1 1 0 0 0 .36-1.12Z"/></svg>`;
     }
     if (clean.includes('steam')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="3"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.38 0 0 5.38 0 12s5.38 12 12 12c6.45 0 11.72-5.11 11.98-11.5L18.4 9.9c-.31.84-1.12 1.44-2.07 1.44-.15 0-.3-.02-.45-.05l-3.38 3.38c.03.15.05.3.05.45 0 1.2-.98 2.18-2.18 2.18-1.2 0-2.18-.98-2.18-2.18 0-1.09.81-1.99 1.86-2.15l2.45-3.63c0-.05-.01-.1-.01-.15 0-1.8 1.46-3.26 3.26-3.26.96 0 1.83.42 2.43 1.09l5.24-2.2C22.65 3.06 17.78 0 12 0zm4.33 8.13c-.62 0-1.13.51-1.13 1.13s.51 1.13 1.13 1.13 1.13-.51 1.13-1.13-.51-1.13-1.13-1.13z"/></svg>`;
     }
     if (clean.includes('epic')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 15 10-15-10-5z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v7c0 5.25 4.25 9.5 10 11 5.75-1.5 10-5.75 10-11V7L12 2z"/></svg>`;
     }
     if (clean.includes('reddit')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 8c1.5 0 3 1.5 3 3v2c0 1.5-1.5 3-3 3s-3-1.5-3-3v-2c0-1.5 1.5-3 3-3z"/></svg>`;
@@ -1287,7 +1287,7 @@ class AuthenticatorApp {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/><path d="M7 10h10"/><path d="m13 14 4-4-4-4"/></svg>`;
     }
     if (clean.includes('adobe')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h4l3-7h6l3 7h4L12 2zm1.2 11h-2.4L12 8.5l1.2 4.5z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14.82 2.73l5.85 15.6H16l-2.02-5.46H9.98l-2 5.46H3.34L9.19 2.73h5.63zM12 8.7L10.75 12h2.5L12 8.7z"/></svg>`;
     }
     if (clean.includes('linkedin')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>`;
@@ -1299,7 +1299,7 @@ class AuthenticatorApp {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
     }
     if (clean.includes('apple')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c-3.5 0-6.5-2.5-6.5-6s3-6.5 6.5-6.5c2 0 3.5 1 4 2 .5-.7 1.5-1.5 2.5-1.5.5 0 .8.2 1 .3-.8 1.7-.8 4.2.7 5.7-1 2.5-2.7 6-5.7 6h-2.5z"/><path d="M12 7.5c1-1 2.5-.5 2.5-.5s.5-1.5-.5-2.5c-1 1-2.5.5-2.5.5s-.5 1.5.5 2.5z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-1.09 3.73-3.38 2.83zm-3.93-15.1c.67-.81 1.12-1.95.99-3.09-1 .04-2.2.67-2.92 1.49-.62.72-1.16 1.88-1.02 3 .99.08 2.13-.59 2.95-1.4z"/></svg>`;
     }
     if (clean.includes('coinbase')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M12 14v4"/></svg>`;
