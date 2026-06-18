@@ -973,6 +973,11 @@ class AuthenticatorApp {
           this.showToast('Copied to clipboard');
           acc.lastUsed = Date.now();
           this.saveAccounts();
+
+          el.classList.remove('copied-pulse');
+          void el.offsetWidth; // trigger reflow to restart keyframe animation
+          el.classList.add('copied-pulse');
+          setTimeout(() => el.classList.remove('copied-pulse'), 400);
         });
 
         // action: explicit copy
@@ -983,6 +988,11 @@ class AuthenticatorApp {
           this.showToast('Copied to clipboard');
           acc.lastUsed = Date.now();
           this.saveAccounts();
+
+          el.classList.remove('copied-pulse');
+          void el.offsetWidth; // trigger reflow to restart keyframe animation
+          el.classList.add('copied-pulse');
+          setTimeout(() => el.classList.remove('copied-pulse'), 400);
         });
 
         // action: edit
