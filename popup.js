@@ -12,6 +12,7 @@ class AuthenticatorApp {
     this.currentEmail = '';
     this.loadedProfiles = [];
     this.editingAccountId = null;
+    this.selectedAccountSecrets = new Set();
 
     // cache dom refs
     this.accountList = document.getElementById('account-list');
@@ -592,6 +593,13 @@ class AuthenticatorApp {
         document.querySelectorAll('#github-profiles-list .sort-chip').forEach(c => c.classList.remove('active'));
         row.classList.add('active');
         this.selectedProfileIndex = index;
+
+        // select all accounts by default
+        this.selectedAccountSecrets.clear();
+        profile.accounts.forEach(acc => {
+          if (acc && acc.secret) this.selectedAccountSecrets.add(acc.secret);
+        });
+
         this.renderAccountPreview(profile.accounts);
       };
       container.appendChild(row);
@@ -603,10 +611,35 @@ class AuthenticatorApp {
     if (!container) return;
     container.innerHTML = '';
     document.getElementById('github-accounts-preview').classList.remove('hidden');
+    
+    // Update heading to show selection count
+    const previewTitle = document.getElementById('preview-title');
+    if (previewTitle) {
+      previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${accounts.length}):`;
+    }
+
     accounts.forEach(acc => {
       const chip = document.createElement('div');
-      chip.className = 'sort-chip'; chip.style.fontSize = '0.65rem';
+      chip.className = 'sort-chip';
+      chip.style.fontSize = '0.65rem';
       chip.innerText = acc.issuer;
+      
+      if (this.selectedAccountSecrets.has(acc.secret)) {
+        chip.classList.add('active');
+      }
+      
+      chip.onclick = () => {
+        if (this.selectedAccountSecrets.has(acc.secret)) {
+          this.selectedAccountSecrets.delete(acc.secret);
+          chip.classList.remove('active');
+        } else {
+          this.selectedAccountSecrets.add(acc.secret);
+          chip.classList.add('active');
+        }
+        if (previewTitle) {
+          previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${accounts.length}):`;
+        }
+      };
       container.appendChild(chip);
     });
   }
@@ -614,11 +647,22 @@ class AuthenticatorApp {
   importFromSelectedProfile() {
     if (this.selectedProfileIndex === undefined) { this.showToast('Select a profile first'); return; }
     const profile = this.loadedProfiles[this.selectedProfileIndex];
+    if (this.selectedAccountSecrets.size === 0) { this.showToast('Select at least one account'); return; }
+    
     let addedCount = 0;
-    profile.accounts.forEach(acc => { if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) addedCount++; });
-    this.applyFiltersAndSort(); this.saveAccounts();
+    profile.accounts.forEach(acc => {
+      if (this.selectedAccountSecrets.has(acc.secret)) {
+        if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) {
+          addedCount++;
+        }
+      }
+    });
+    
+    this.applyFiltersAndSort();
+    this.saveAccounts();
     this.showToast(`Imported ${addedCount} accounts`);
     this.syncToGithub();
+    this.closeImportModal();
   }
 
   importAllFromCloud() {
