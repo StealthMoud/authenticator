@@ -130,28 +130,50 @@ AuthenticatorApp.prototype.render = function() {
       const currentEmail = profileCount > 0 ? acc.profile.split(', ')[activeIdx] : '';
 
       el.className = 'account-item';
+      
+      let algo = 'SHA-1';
+      let digits = '6';
+      let period = '30s';
+      if (acc.uri) {
+        try {
+          const totp = OTPAuth.URI.parse(acc.uri);
+          algo = totp.algorithm || 'SHA1';
+          digits = totp.digits || '6';
+          period = totp.period ? `${totp.period}s` : '30s';
+        } catch (e) {}
+      }
+
+      const addedDate = new Date(acc.id || Date.now()).toLocaleDateString();
+      const lastUsedStr = acc.lastUsed ? new Date(acc.lastUsed).toLocaleDateString() : 'Never';
+      const useCountVal = acc.useCount || 0;
+
       el.innerHTML = `
-        <div class="account-icon-wrapper">
-          ${this.getIssuerIcon(acc.issuer)}
+        <div class="account-card-main">
+          <div class="account-icon-wrapper">
+            ${this.getIssuerIcon(acc.issuer)}
+          </div>
+          <div class="account-info">
+            <span class="account-label">${this.escapeHtml(acc.label)}</span>
+            <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
+            ${acc.profile ? `
+              <div class="account-profile-badges" data-profiles="${this.escapeHtml(acc.profile)}" data-index="${activeIdx}">
+                <span class="account-profile-badge" title="Imported from: ${this.escapeHtml(currentEmail)}">${this.escapeHtml(currentEmail)}</span>
+                ${profileCount > 1 ? `
+                  <button class="badge-cycle-btn" title="Cycle through profiles">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+          <div class="account-otp">--- ---</div>
         </div>
-        <div class="account-info">
-          <span class="account-label">${this.escapeHtml(acc.label)}</span>
-          <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
-          ${acc.profile ? `
-            <div class="account-profile-badges" data-profiles="${this.escapeHtml(acc.profile)}" data-index="${activeIdx}">
-              <span class="account-profile-badge" title="Imported from: ${this.escapeHtml(currentEmail)}">${this.escapeHtml(currentEmail)}</span>
-              ${profileCount > 1 ? `
-                <button class="badge-cycle-btn" title="Cycle through profiles">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                </button>
-              ` : ''}
-            </div>
-          ` : ''}
-        </div>
-        <div class="account-otp">--- ---</div>
         <div class="account-actions">
           <button class="action-copy" title="Copy code">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          </button>
+          <button class="action-info" title="View details">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
           </button>
           <button class="action-edit" title="Edit account">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -159,17 +181,43 @@ AuthenticatorApp.prototype.render = function() {
           <button class="action-delete" title="Delete account">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </button>
+        </div>
+        <div class="account-card-details hidden">
+          <div class="details-grid">
+            <div class="details-item">
+              <span class="details-label">Date Added</span>
+              <span class="details-value">${addedDate}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Last Used</span>
+              <span class="details-value details-value-lastused">${lastUsedStr}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Times Used</span>
+              <span class="details-value details-value-usecount">${useCountVal}</span>
+            </div>
+            <div class="details-item">
+              <span class="details-label">Spec</span>
+              <span class="details-value">${algo}/${digits}d/${period}</span>
+            </div>
+          </div>
         </div>`;
 
       // click on card body -> copy
       el.addEventListener('click', (e) => {
         // dont copy if they clicked an action button or the cycle button
-        if (e.target.closest('.account-actions') || e.target.closest('.badge-cycle-btn')) return;
+        if (e.target.closest('.account-actions') || e.target.closest('.badge-cycle-btn') || e.target.closest('.account-card-details')) return;
         const totp = new OTPAuth.TOTP({ secret: acc.secret });
         navigator.clipboard.writeText(totp.generate());
         this.showToast('Copied to clipboard');
         acc.lastUsed = Date.now();
+        acc.useCount = (acc.useCount || 0) + 1;
         this.saveAccounts(true);
+
+        const useCountEl = el.querySelector('.details-value-usecount');
+        if (useCountEl) useCountEl.textContent = acc.useCount;
+        const lastUsedEl = el.querySelector('.details-value-lastused');
+        if (lastUsedEl) lastUsedEl.textContent = new Date(acc.lastUsed).toLocaleDateString();
 
         el.classList.remove('copied-pulse');
         void el.offsetWidth; // trigger reflow to restart keyframe animation
@@ -184,12 +232,35 @@ AuthenticatorApp.prototype.render = function() {
         navigator.clipboard.writeText(totp.generate());
         this.showToast('Copied to clipboard');
         acc.lastUsed = Date.now();
+        acc.useCount = (acc.useCount || 0) + 1;
         this.saveAccounts(true);
+
+        const useCountEl = el.querySelector('.details-value-usecount');
+        if (useCountEl) useCountEl.textContent = acc.useCount;
+        const lastUsedEl = el.querySelector('.details-value-lastused');
+        if (lastUsedEl) lastUsedEl.textContent = new Date(acc.lastUsed).toLocaleDateString();
 
         el.classList.remove('copied-pulse');
         void el.offsetWidth; // trigger reflow to restart keyframe animation
         el.classList.add('copied-pulse');
         setTimeout(() => el.classList.remove('copied-pulse'), 400);
+      });
+
+      // action: info
+      el.querySelector('.action-info').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const details = el.querySelector('.account-card-details');
+        const isHidden = details.classList.contains('hidden');
+        
+        document.querySelectorAll('.account-card-details').forEach(d => {
+          if (d !== details) d.classList.add('hidden');
+        });
+        document.querySelectorAll('.account-item').forEach(item => {
+          if (item !== el) item.classList.remove('details-expanded');
+        });
+        
+        details.classList.toggle('hidden');
+        el.classList.toggle('details-expanded');
       });
 
       // action: edit

@@ -14,12 +14,12 @@
   background: var(--bg-card);
   border: 1px solid var(--border-glass);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
-  min-height: 74px;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  transition: min-height 0.25s var(--spring-curve), padding-right 0.25s var(--spring-curve), transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  min-height: 74px;
+  transition: min-height 0.25s var(--spring-curve), transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -33,12 +33,33 @@
   background-color: var(--bg-card-hover);
   transform: translateX(4px);
   box-shadow: var(--shadow-premium), 0 4px 15px -3px var(--primary-glow);
-  padding-right: 124px;
   min-height: 98px;
 }
 
+.account-item.details-expanded {
+  min-height: 154px;
+}
+
+.account-item.details-expanded:hover {
+  min-height: 154px;
+}
+
+.account-card-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 20px;
+  transition: padding-right 0.25s var(--spring-curve);
+  box-sizing: border-box;
+}
+
+.account-item:hover .account-card-main {
+  padding-right: 148px;
+}
+
 .account-item:active {
-  transform: scale(0.98) translateX(2px);
+  transform: scale(0.985) translateX(2px);
 }
 
 .account-icon-wrapper {
@@ -144,7 +165,7 @@
 /* ==================== Account Card Actions ==================== */
 .account-actions {
   position: absolute;
-  top: 50%;
+  top: 37px;
   right: 20px;
   transform: translateY(-50%) translateX(12px);
   display: flex;
@@ -193,6 +214,12 @@
   border-color: var(--primary);
 }
 
+.account-actions .action-info:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
 .account-actions .action-edit:hover {
   background: var(--warning);
   color: white;
@@ -203,4 +230,56 @@
   background: var(--danger);
   color: white;
   border-color: var(--danger);
+}
+
+/* ==================== Account Details Drawer ==================== */
+.account-card-details {
+  border-top: 1px solid var(--border-glass);
+  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.15);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: detailsSlideDown 0.25s var(--spring-curve) forwards;
+}
+
+@keyframes detailsSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+}
+
+.details-item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.details-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  opacity: 0.5;
+  font-weight: 700;
+}
+
+.details-value {
+  color: white;
+  font-weight: 500;
+  font-size: 0.72rem;
+  font-family: monospace;
 }
