@@ -80,12 +80,9 @@
   gap: 12px;
   width: 100%;
   padding: 16px 20px;
-  transition: padding-right 0.25s var(--spring-curve);
   box-sizing: border-box;
-}
-
-.account-item:hover .account-card-main {
-  padding-right: 148px;
+  position: relative;
+  height: 74px;
 }
 
 .account-icon-wrapper {
@@ -130,6 +127,12 @@
   gap: 3px;
   flex: 1;
   min-width: 0;
+  padding-right: 110px;
+  transition: padding-right 0.25s var(--spring-curve);
+}
+
+.account-item:hover .account-info {
+  padding-right: 140px;
 }
 
 .account-label {
@@ -141,12 +144,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: white-space var(--transition-fast) ease;
-}
-
-.account-item:hover .account-label {
-  white-space: normal;
-  word-break: break-all;
 }
 
 .account-issuer {
@@ -174,10 +171,15 @@
   font-variant-numeric: tabular-nums;
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.08));
   flex-shrink: 0;
-  transition: all var(--transition-fast) ease;
-  max-width: 180px;
-  overflow: hidden;
-  white-space: nowrap;
+  position: absolute;
+  right: 20px;
+  top: 23px;
+  transition: all var(--transition-fast) var(--spring-curve);
+  z-index: 5;
+}
+
+.account-item:hover .account-otp {
+  transform: translateY(39px);
 }
 
 /* ==================== Account Card Actions ==================== */
