@@ -1,5 +1,77 @@
 /* global jsQR, OTPAuth */
 
+if (typeof chrome === 'undefined' || !chrome.storage) {
+  window.chrome = {
+    identity: {
+      getProfileUserInfo: (opts, cb) => cb({ email: 'mock@stealthmoud.dev' })
+    },
+    storage: {
+      local: {
+        get: (keys, cb) => {
+          const res = {};
+          const mockAccounts = [
+            { id: '1', issuer: 'Google', label: 'mock@gmail.com', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '2', issuer: 'GitHub', label: 'StealthMoud', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '3', issuer: 'Discord', label: 'StealthMoud#1337', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '4', issuer: 'Microsoft', label: 'work@outlook.com', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '5', issuer: 'Slack', label: 'stealth workspace', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '6', issuer: 'Facebook', label: 'private profile', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '7', issuer: 'Instagram', label: 'travel snaps', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '8', issuer: 'Twitter', label: 'personal', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '9', issuer: 'Twitch', label: 'streamer', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '10', issuer: 'GitLab', label: 'gitlab_user', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '11', issuer: 'Steam', label: 'gamer', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '12', issuer: 'Epic Games', label: 'epic_user', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '13', issuer: 'Reddit', label: 'reddit_lurker', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '14', issuer: 'Bitbucket', label: 'bitbucket_user', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '15', issuer: 'DigitalOcean', label: 'cloud_vps', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '16', issuer: 'Heroku', label: 'app_dyno', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '17', issuer: 'Cloudflare', label: 'domain_dns', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '18', issuer: 'OpenAI', label: 'gpt_developer', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '19', issuer: 'Zoom', label: 'meeting_room', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '20', issuer: 'Spotify', label: 'music_playlists', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '21', issuer: 'PayPal', label: 'payments', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '22', issuer: 'Stripe', label: 'merchant_acct', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '23', issuer: 'Adobe', label: 'creative_cloud', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '24', issuer: 'LinkedIn', label: 'professional_net', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '25', issuer: 'Yahoo', label: 'old_mail', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '26', issuer: 'Amazon', label: 'shopping', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '27', issuer: 'Apple', label: 'icloud_storage', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '28', issuer: 'Coinbase', label: 'crypto_wallet', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '29', issuer: 'Binance', label: 'crypto_exchange', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '30', issuer: 'Voorivex', label: 'voorivex.academy', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '31', issuer: 'HackerOne', label: 'h1_security', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '32', issuer: 'Bugcrowd', label: 'bugcrowd_research', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '33', issuer: 'Intigriti', label: 'intigriti_hacker', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '34', issuer: 'YesWeHack', label: 'yeswehack_vdp', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '35', issuer: 'Synack', label: 'synack_srt', secret: 'JBSWY3DPEHPK3PXP' }
+          ];
+
+          keys.forEach(k => {
+            if (k === 'authenticator_accounts') {
+              res[k] = mockAccounts;
+            } else if (k === 'privacyMode') {
+              res[k] = false;
+            } else if (k === 'sortAscending') {
+              res[k] = true;
+            } else if (k === 'popupWidth') {
+              res[k] = 360;
+            } else if (k === 'popupHeight') {
+              res[k] = 520;
+            }
+          });
+          cb(res);
+        },
+        set: (vals, cb) => { if (cb) cb(); },
+        remove: (keys, cb) => { if (cb) cb(); }
+      }
+    },
+    runtime: {
+      sendMessage: (msg, cb) => { if (cb) cb({ success: true }); }
+    }
+  };
+}
+
 class AuthenticatorApp {
   constructor() {
     this.accounts = [];
@@ -1297,94 +1369,58 @@ class AuthenticatorApp {
 
   getIssuerIcon(issuer) {
     const clean = (issuer || '').toLowerCase().trim();
-    if (clean.includes('google')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>`;
+    if (!clean) {
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
     }
-    if (clean.includes('github')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
+
+    // Helper funcition to map user account issuers to brand icons
+    let key = null;
+    if (clean.includes('google')) key = 'google';
+    else if (clean.includes('github')) key = 'github';
+    else if (clean.includes('instagram') || clean.includes('intagram')) key = 'instagram';
+    else if (clean.includes('discord')) key = 'discord';
+    else if (clean.includes('microsoft') || clean.includes('outlook') || clean.includes('live') || clean.includes('azure')) key = 'microsoft';
+    else if (clean.includes('slack')) key = 'slack';
+    else if (clean.includes('facebook')) key = 'facebook';
+    else if (clean.includes('twitter') || clean.includes('x.com') || clean === 'x') key = 'x';
+    else if (clean.includes('twitch')) key = 'twitch';
+    else if (clean.includes('gitlab')) key = 'gitlab';
+    else if (clean.includes('steam')) key = 'steam';
+    else if (clean.includes('epic')) key = 'epic';
+    else if (clean.includes('reddit')) key = 'reddit';
+    else if (clean.includes('bitbucket')) key = 'bitbucket';
+    else if (clean.includes('digitalocean') || clean.includes('digital ocean')) key = 'digitalocean';
+    else if (clean.includes('heroku')) key = 'heroku';
+    else if (clean.includes('cloudflare')) key = 'cloudflare';
+    else if (clean.includes('openai') || clean.includes('chatgpt')) key = 'openai';
+    else if (clean.includes('zoom')) key = 'zoom';
+    else if (clean.includes('spotify')) key = 'spotify';
+    else if (clean.includes('paypal')) key = 'paypal';
+    else if (clean.includes('stripe')) key = 'stripe';
+    else if (clean.includes('adobe')) key = 'adobe';
+    else if (clean.includes('linkedin')) key = 'linkedin';
+    else if (clean.includes('yahoo')) key = 'yahoo';
+    else if (clean.includes('amazon') || clean.includes('aws')) key = 'amazon';
+    else if (clean.includes('apple')) key = 'apple';
+    else if (clean.includes('coinbase')) key = 'coinbase';
+    else if (clean.includes('binance')) key = 'binance';
+    else if (clean.includes('voorivex')) key = 'voorivex';
+    else if (clean.includes('hackerone') || clean.includes('h1')) key = 'hackerone';
+    else if (clean.includes('bugcrowd')) key = 'bugcrowd';
+    else if (clean.includes('intigriti')) key = 'intigriti';
+    else if (clean.includes('yeswehack')) key = 'yeswehack';
+    else if (clean.includes('synack')) key = 'synack';
+
+    if (key && window.BRAND_ICONS && window.BRAND_ICONS[key]) {
+      const icon = window.BRAND_ICONS[key];
+      if (typeof icon === 'object') {
+        return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="${icon.viewBox}" fill="currentColor">${icon.html}</svg>`;
+      }
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="${icon}"/></svg>`;
     }
-    if (clean.includes('instagram') || clean.includes('intagram')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>`;
-    }
-    if (clean.includes('discord')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 0 0-3-3H9a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V8Z"/><circle cx="10" cy="12" r="1"/><circle cx="14" cy="12" r="1"/></svg>`;
-    }
-    if (clean.includes('microsoft') || clean.includes('outlook') || clean.includes('live') || clean.includes('azure')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="8" x="3" y="3" rx="1"/><rect width="8" height="8" x="13" y="3" rx="1"/><rect width="8" height="8" x="3" y="13" rx="1"/><rect width="8" height="8" x="13" y="13" rx="1"/></svg>`;
-    }
-    if (clean.includes('slack')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="6" height="6" x="3" y="3" rx="1"/><rect width="6" height="6" x="15" y="3" rx="1"/><rect width="6" height="6" x="3" y="15" rx="1"/><rect width="6" height="6" x="15" y="15" rx="1"/><path d="M10 6h4"/><path d="M10 18h4"/><path d="M6 10v4"/><path d="M18 10v4"/></svg>`;
-    }
-    if (clean.includes('facebook')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>`;
-    }
-    if (clean.includes('twitter') || clean.includes('x.com') || clean === 'x') {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733 -16z"/><path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"/></svg>`;
-    }
-    if (clean.includes('twitch')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9H9V6h2v5zm4 0h-2V6h2v5z"/></svg>`;
-    }
-    if (clean.includes('gitlab')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 13.29-1.92-5.9a1 1 0 0 0-.96-.69h-2.14l-1.98-6.1a1 1 0 0 0-1.9 0L11 6.7H8.86a1 1 0 0 0-.96.69l-1.92 5.9a1 1 0 0 0 .36 1.12l8.3 6a1 1 0 0 0 1.18 0l8.3-6a1 1 0 0 0 .36-1.12Z"/></svg>`;
-    }
-    if (clean.includes('steam')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.38 0 0 5.38 0 12s5.38 12 12 12c6.45 0 11.72-5.11 11.98-11.5L18.4 9.9c-.31.84-1.12 1.44-2.07 1.44-.15 0-.3-.02-.45-.05l-3.38 3.38c.03.15.05.3.05.45 0 1.2-.98 2.18-2.18 2.18-1.2 0-2.18-.98-2.18-2.18 0-1.09.81-1.99 1.86-2.15l2.45-3.63c0-.05-.01-.1-.01-.15 0-1.8 1.46-3.26 3.26-3.26.96 0 1.83.42 2.43 1.09l5.24-2.2C22.65 3.06 17.78 0 12 0zm4.33 8.13c-.62 0-1.13.51-1.13 1.13s.51 1.13 1.13 1.13 1.13-.51 1.13-1.13-.51-1.13-1.13-1.13z"/></svg>`;
-    }
-    if (clean.includes('epic')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 15 10-15-10-5z"/></svg>`;
-    }
-    if (clean.includes('reddit')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 8c1.5 0 3 1.5 3 3v2c0 1.5-1.5 3-3 3s-3-1.5-3-3v-2c0-1.5 1.5-3 3-3z"/></svg>`;
-    }
-    if (clean.includes('bitbucket')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16l2 14-10 4-10-4z"/></svg>`;
-    }
-    if (clean.includes('digitalocean') || clean.includes('digital ocean')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>`;
-    }
-    if (clean.includes('heroku')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16v18H4z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="M8 16h4"/></svg>`;
-    }
-    if (clean.includes('cloudflare')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/><path d="m13 10-4 6h6l-4 6"/></svg>`;
-    }
-    if (clean.includes('openai') || clean.includes('chatgpt')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>`;
-    }
-    if (clean.includes('zoom')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>`;
-    }
-    if (clean.includes('spotify')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12a10.4 10.4 0 0 1 8 0"/><path d="M9 9a8 8 0 0 1 6 0"/><path d="M7 15a12.5 12.5 0 0 1 10 0"/></svg>`;
-    }
-    if (clean.includes('paypal')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2h8a5 5 0 0 1 0 10H9v10H5V8a6 6 0 0 1 2-6z"/><path d="M11 6h5a5 5 0 0 1 0 10h-3v6h-4V10a6 6 0 0 1 3-4z"/></svg>`;
-    }
-    if (clean.includes('stripe')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4"/><path d="M7 10h10"/><path d="m13 14 4-4-4-4"/></svg>`;
-    }
-    if (clean.includes('adobe')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M14.82 2.73l5.85 15.6H16l-2.02-5.46H9.98l-2 5.46H3.34L9.19 2.73h5.63zM12 8.7L10.75 12h2.5L12 8.7z"/></svg>`;
-    }
-    if (clean.includes('linkedin')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>`;
-    }
-    if (clean.includes('yahoo')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 3 7 9 7-9"/><path d="M12 12v6"/><line x1="12" x2="12" y1="21" y2="22"/></svg>`;
-    }
-    if (clean.includes('amazon') || clean.includes('aws')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
-    }
-    if (clean.includes('apple')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>`;
-    }
-    if (clean.includes('coinbase')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M12 14v4"/></svg>`;
-    }
-    if (clean.includes('binance')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l4 4-4 4-4-4 4-4z"/><path d="M12 14l4 4-4 4-4-4 4-4z"/><path d="M20 10l2 2-2 2-2-2 2-2z"/><path d="M4 10l2 2-2 2-2-2 2-2z"/></svg>`;
-    }
-    return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+
+    // fallback to outline padlock if brand not resolved
+    return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
   }
 
   inferIssuer(label, currentIssuer) {
@@ -1393,9 +1429,22 @@ class AuthenticatorApp {
       return lbl.split(':')[0].trim();
     }
     const lblLower = lbl.toLowerCase();
-    const brands = ['google', 'github', 'instagram', 'discord', 'microsoft', 'outlook', 'live', 'azure', 'slack', 'facebook', 'twitter', 'twitch', 'gitlab', 'steam', 'epic', 'reddit', 'bitbucket', 'digitalocean', 'heroku', 'cloudflare', 'openai', 'zoom', 'spotify', 'paypal', 'stripe', 'adobe', 'linkedin', 'yahoo', 'amazon', 'aws', 'apple', 'coinbase', 'binance'];
+    const brands = [
+      'google', 'github', 'instagram', 'discord', 'microsoft', 'outlook', 'live', 'azure', 
+      'slack', 'facebook', 'twitter', 'twitch', 'gitlab', 'steam', 'epic', 'reddit', 
+      'bitbucket', 'digitalocean', 'heroku', 'cloudflare', 'openai', 'zoom', 'spotify', 
+      'paypal', 'stripe', 'adobe', 'linkedin', 'yahoo', 'amazon', 'aws', 'apple', 
+      'coinbase', 'binance', 'voorivex', 'hackerone', 'h1', 'bugcrowd', 'intigriti', 
+      'yeswehack', 'synack'
+    ];
     const foundBrand = brands.find(b => lblLower.includes(b));
     if (foundBrand) {
+      if (foundBrand === 'hackerone' || foundBrand === 'h1') return 'HackerOne';
+      if (foundBrand === 'yeswehack') return 'YesWeHack';
+      if (foundBrand === 'voorivex') return 'Voorivex';
+      if (foundBrand === 'bugcrowd') return 'Bugcrowd';
+      if (foundBrand === 'intigriti') return 'Intigriti';
+      if (foundBrand === 'synack') return 'Synack';
       return foundBrand.charAt(0).toUpperCase() + foundBrand.slice(1);
     }
     return currentIssuer || 'Unknown';
