@@ -46,11 +46,16 @@ class AuthenticatorApp {
     this.settingsBtn = document.getElementById('settings-btn');
     this.settingsModal = document.getElementById('settings-modal');
     this.disconnectBtn = document.getElementById('disconnect-vault-btn');
+    this.editVaultBtn = document.getElementById('edit-vault-btn');
+    this.cancelGhEditBtn = document.getElementById('cancel-gh-edit');
     this.settingsConnectedView = document.getElementById('settings-connected-view');
     this.settingsSetupView = document.getElementById('settings-setup-view');
     this.settingsRepoDisplay = document.getElementById('settings-repo-display');
     this.settingsEmailDisplay = document.getElementById('settings-email-display');
     this.settingsSyncStatus = document.getElementById('settings-sync-status');
+    this.settingsErrorDetails = document.getElementById('settings-error-details');
+    this.settingsErrorText = document.getElementById('settings-error-text');
+    this.isEditingConfig = false;
 
     // cloud fetch notice
     this.cloudFetchNotice = document.getElementById('cloud-fetch-unavailable');
@@ -103,7 +108,13 @@ class AuthenticatorApp {
     return new Promise((resolve) => {
       chrome.storage.local.get(['ghToken', 'ghRepo'], (result) => {
         this.ghToken = result.ghToken || '';
-        this.ghRepo = result.ghRepo || '';
+        let repo = result.ghRepo || '';
+        if (repo) {
+          repo = repo.replace(/^(https?:\/\/)?(www\.)?github\.com\//i, '').replace(/^\/+|\/+$/g, '');
+          this.ghRepo = repo;
+        } else {
+          this.ghRepo = '';
+        }
         if (this.ghToken && this.ghTokenInput) this.ghTokenInput.value = this.ghToken;
         if (this.ghRepo && this.ghRepoInput) this.ghRepoInput.value = this.ghRepo;
         resolve();
@@ -158,23 +169,49 @@ class AuthenticatorApp {
     const hasConfig = this.ghToken && this.ghRepo;
 
     if (hasConfig) {
-      this.settingsConnectedView.classList.remove('hidden');
-      this.settingsSetupView.classList.add('hidden');
+      if (!this.isEditingConfig) {
+        this.settingsConnectedView.classList.remove('hidden');
+        this.settingsSetupView.classList.add('hidden');
+      }
       if (this.settingsRepoDisplay) this.settingsRepoDisplay.textContent = this.ghRepo;
       if (this.settingsEmailDisplay) this.settingsEmailDisplay.textContent = this.currentEmail || '—';
       if (this.settingsSyncStatus) {
         if (this.syncError) {
           this.settingsSyncStatus.textContent = 'Error';
           this.settingsSyncStatus.className = 'connected-value status-fail';
+          if (this.settingsErrorDetails) {
+            this.settingsErrorDetails.classList.remove('hidden');
+            if (this.settingsErrorText) this.settingsErrorText.textContent = this.syncErrorMessage || 'Cloud sync failed';
+          }
         } else {
           this.settingsSyncStatus.textContent = 'Connected';
           this.settingsSyncStatus.className = 'connected-value status-ok';
+          if (this.settingsErrorDetails) this.settingsErrorDetails.classList.add('hidden');
         }
       }
     } else {
+      this.isEditingConfig = false;
       this.settingsConnectedView.classList.add('hidden');
       this.settingsSetupView.classList.remove('hidden');
+      if (this.cancelGhEditBtn) this.cancelGhEditBtn.classList.add('hidden');
+      if (this.settingsErrorDetails) this.settingsErrorDetails.classList.add('hidden');
     }
+  }
+
+  startEditingConfig() {
+    this.isEditingConfig = true;
+    if (this.ghTokenInput) this.ghTokenInput.value = this.ghToken || '';
+    if (this.ghRepoInput) this.ghRepoInput.value = this.ghRepo || '';
+    if (this.settingsConnectedView) this.settingsConnectedView.classList.add('hidden');
+    if (this.settingsSetupView) this.settingsSetupView.classList.remove('hidden');
+    if (this.cancelGhEditBtn) this.cancelGhEditBtn.classList.remove('hidden');
+  }
+
+  cancelEditingConfig() {
+    this.isEditingConfig = false;
+    if (this.settingsConnectedView) this.settingsConnectedView.classList.remove('hidden');
+    if (this.settingsSetupView) this.settingsSetupView.classList.add('hidden');
+    if (this.cancelGhEditBtn) this.cancelGhEditBtn.classList.add('hidden');
   }
 
   updateCloudFetchState() {
@@ -230,6 +267,9 @@ class AuthenticatorApp {
     window.addEventListener('click', (e) => {
       if (e.target === this.settingsModal) this.closeSettings();
     });
+
+    if (this.editVaultBtn) this.editVaultBtn.addEventListener('click', () => this.startEditingConfig());
+    if (this.cancelGhEditBtn) this.cancelGhEditBtn.addEventListener('click', () => this.cancelEditingConfig());
 
     // disconnect vault
     if (this.disconnectBtn) {
@@ -319,7 +359,11 @@ class AuthenticatorApp {
   }
 
   closeSettings() {
-    if (this.settingsModal) this.settingsModal.classList.add('hidden');
+    if (this.settingsModal) {
+      this.settingsModal.classList.add('hidden');
+      this.isEditingConfig = false;
+      this.updateSettingsView();
+    }
   }
 
   confirmAction(title, message, onConfirm) {
@@ -361,9 +405,13 @@ class AuthenticatorApp {
 
   async saveGithubConfig() {
     const token = this.ghTokenInput.value.trim();
-    const repo = this.ghRepoInput.value.trim();
+    let repo = this.ghRepoInput.value.trim();
     if (!token || !repo) { this.showToast('Fill in both fields'); return; }
 
+    repo = repo.replace(/^(https?:\/\/)?(www\.)?github\.com\//i, '').replace(/^\/+|\/+$/g, '');
+    if (!repo) { this.showToast('Invalid repository format'); return; }
+
+    this.isEditingConfig = false;
     this.ghToken = token;
     this.ghRepo = repo;
     await chrome.storage.local.set({ ghToken: token, ghRepo: repo });

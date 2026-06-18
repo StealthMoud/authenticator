@@ -1116,6 +1116,50 @@ h1 {
   border-radius: 0 2px 2px 0;
 }
 
+/* Settings interactive tweaks */
+.connected-error-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(244, 63, 94, 0.08);
+  border-top: 1px solid rgba(244, 63, 94, 0.2);
+  color: var(--danger);
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+.connected-error-box svg {
+  flex-shrink: 0;
+}
+.settings-actions-row {
+  display: flex;
+  gap: 8px;
+}
+.settings-actions-row button {
+  flex: 1;
+}
+.btn-action-outline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-main);
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-action-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
 /* ==================== Utility ==================== */
 .hidden { display: none !important; }
 .privacy-enabled .account-otp { filter: blur(8px); }
