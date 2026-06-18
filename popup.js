@@ -1065,9 +1065,10 @@ class AuthenticatorApp {
   }
 
   setupResizeHandler() {
-    const handleRight = document.getElementById('resize-handle');
-    const handleLeft = document.getElementById('resize-handle-left');
-    if (!handleRight && !handleLeft) return;
+    const edgeLeft = document.getElementById('resize-edge-left');
+    const edgeRight = document.getElementById('resize-edge-right');
+    const edgeBottom = document.getElementById('resize-edge-bottom');
+    if (!edgeLeft && !edgeRight && !edgeBottom) return;
 
     // Load persisted dimensions
     chrome.storage.local.get(['popupWidth', 'popupHeight'], (res) => {
@@ -1079,9 +1080,10 @@ class AuthenticatorApp {
       }
     });
 
-    const bindDrag = (handle, direction) => {
-      handle.addEventListener('mousedown', (e) => {
+    const bindResize = (edge, type) => {
+      edge.addEventListener('mousedown', (e) => {
         e.preventDefault();
+        edge.classList.add('dragging');
         const startWidth = document.body.clientWidth;
         const startHeight = document.body.clientHeight;
         const startX = e.clientX;
@@ -1091,24 +1093,23 @@ class AuthenticatorApp {
           const deltaX = moveEvent.clientX - startX;
           const deltaY = moveEvent.clientY - startY;
 
-          let newWidth = startWidth;
-          if (direction === 'right') {
-            newWidth += deltaX;
-          } else if (direction === 'left') {
-            newWidth -= deltaX;
+          if (type === 'left') {
+            let newWidth = startWidth - deltaX;
+            newWidth = Math.max(380, Math.min(800, newWidth));
+            document.body.style.width = `${newWidth}px`;
+          } else if (type === 'right') {
+            let newWidth = startWidth + deltaX;
+            newWidth = Math.max(380, Math.min(800, newWidth));
+            document.body.style.width = `${newWidth}px`;
+          } else if (type === 'bottom') {
+            let newHeight = startHeight + deltaY;
+            newHeight = Math.max(520, Math.min(600, newHeight));
+            document.body.style.height = `${newHeight}px`;
           }
-
-          let newHeight = startHeight + deltaY;
-
-          // Clamp to Chrome popup boundaries
-          newWidth = Math.max(380, Math.min(800, newWidth));
-          newHeight = Math.max(520, Math.min(600, newHeight));
-
-          document.body.style.width = `${newWidth}px`;
-          document.body.style.height = `${newHeight}px`;
         };
 
         const onMouseUp = () => {
+          edge.classList.remove('dragging');
           window.removeEventListener('mousemove', onMouseMove);
           window.removeEventListener('mouseup', onMouseUp);
 
@@ -1124,8 +1125,9 @@ class AuthenticatorApp {
       });
     };
 
-    if (handleRight) bindDrag(handleRight, 'right');
-    if (handleLeft) bindDrag(handleLeft, 'left');
+    if (edgeLeft) bindResize(edgeLeft, 'left');
+    if (edgeRight) bindResize(edgeRight, 'right');
+    if (edgeBottom) bindResize(edgeBottom, 'bottom');
   }
 }
 

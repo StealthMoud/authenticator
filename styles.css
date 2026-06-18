@@ -93,39 +93,40 @@ body {
     radial-gradient(circle at 0% 100%, hsla(180, 50%, 20%, 0.08) 0%, transparent 40%);
 }
 
-/* Draggable Resize Corner */
-.resize-handle {
+/* Draggable Resize Edges */
+.resize-edge {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  cursor: nwse-resize;
   z-index: 2000;
-  opacity: 0.35;
-  transition: opacity var(--transition-fast) ease;
-  background-image: linear-gradient(135deg, transparent 30%, var(--text-muted) 30%, var(--text-muted) 40%, transparent 40%, transparent 50%, var(--text-muted) 50%, var(--text-muted) 60%, transparent 60%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 80%, transparent 80%);
+  background: transparent;
+  transition: background-color var(--transition-fast) ease;
 }
 
-.resize-handle:hover {
-  opacity: 0.9;
+.resize-edge:hover, .resize-edge.dragging {
+  background-color: hsla(250, 85%, 65%, 0.08);
 }
 
-.resize-handle-left {
-  position: absolute;
+.resize-edge.left {
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.resize-edge.right {
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.resize-edge.bottom {
   bottom: 0;
   left: 0;
-  width: 12px;
-  height: 12px;
-  cursor: nesw-resize;
-  z-index: 2000;
-  opacity: 0.35;
-  transition: opacity var(--transition-fast) ease;
-  background-image: linear-gradient(225deg, transparent 30%, var(--text-muted) 30%, var(--text-muted) 40%, transparent 40%, transparent 50%, var(--text-muted) 50%, var(--text-muted) 60%, transparent 60%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 80%, transparent 80%);
-}
-
-.resize-handle-left:hover {
-  opacity: 0.9;
+  width: 100%;
+  height: 6px;
+  cursor: ns-resize;
 }
 
 .app-container::after {
