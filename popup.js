@@ -340,14 +340,19 @@ class AuthenticatorApp {
     if (closeImportBtn) closeImportBtn.addEventListener('click', toggleImport);
     window.addEventListener('click', (e) => { if (e.target === this.importModal) toggleImport(); });
 
-    // add-first-btn in empty state (delegated to handle dynamic rendering)
+    // empty state button delegation
     if (this.accountList) {
-      this.accountList.addEventListener('click', (e) => {
-        if (e.target && e.target.closest('#add-first-btn')) {
-          toggleImport();
-        }
-      });
-    }
+       this.accountList.addEventListener('click', (e) => {
+         if (e.target) {
+           if (e.target.closest('#add-first-btn')) {
+             toggleImport();
+           } else if (e.target.closest('#restore-first-btn')) {
+             toggleImport();
+             this.fetchFromGithub();
+           }
+         }
+       });
+     }
 
     // file drop zone
     if (this.dropZone) {
@@ -752,14 +757,30 @@ class AuthenticatorApp {
 
     if (this.filteredAccounts.length === 0) {
       if (this.accounts.length === 0) {
-        this.accountList.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-            </div>
-            <p>No accounts yet</p>
-            <button id="add-first-btn">Add Your First Account</button>
-          </div>`;
+        const isCloudConnected = !!(this.ghToken && this.ghRepo);
+        if (isCloudConnected) {
+          this.accountList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon" style="color: var(--accent); opacity: 0.8;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+              </div>
+              <p class="empty-title">Cloud Vault Linked</p>
+              <p class="empty-subtitle">No accounts on this device yet. Start fresh or restore your cloud data.</p>
+              <div class="empty-actions">
+                <button id="add-first-btn">Add Account</button>
+                <button id="restore-first-btn" class="btn-action-outline">Restore Cloud Data</button>
+              </div>
+            </div>`;
+        } else {
+          this.accountList.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              </div>
+              <p class="empty-title">No accounts yet</p>
+              <button id="add-first-btn">Add Your First Account</button>
+            </div>`;
+        }
       } else {
         this.accountList.innerHTML = '<div class="empty-state"><p>No matching accounts</p></div>';
       }

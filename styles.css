@@ -642,6 +642,39 @@ h1 {
   box-shadow: 0 8px 20px -5px var(--primary-glow);
 }
 
+.empty-title {
+  color: var(--text-main) !important;
+  font-weight: 700;
+  font-size: 1rem !important;
+  margin-bottom: 6px !important;
+}
+
+.empty-subtitle {
+  color: var(--text-dim) !important;
+  font-size: 0.75rem !important;
+  line-height: 1.4;
+  max-width: 260px;
+  margin-bottom: 20px !important;
+}
+
+.empty-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.empty-state button.btn-action-outline {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-glass);
+}
+
+.empty-state button.btn-action-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
 /* ==================== Footer ==================== */
 .footer-actions {
   padding: 12px 24px;
