@@ -120,6 +120,14 @@ class AuthenticatorApp {
         
         // Auto-fix any missing/Unknown issuers from the label if possible
         let modified = false;
+
+        // Backfill createdAt for accounts that predate this field
+        this.accounts.forEach(acc => {
+          if (!acc.createdAt && acc.id) {
+            acc.createdAt = acc.id;
+            modified = true;
+          }
+        });
         this.accounts.forEach(acc => {
           let uriModified = false;
           if (acc.uri) {

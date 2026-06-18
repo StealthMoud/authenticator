@@ -9,7 +9,7 @@ AuthenticatorApp.prototype.importFromSelectedProfile = function() {
     if (this.selectedProfileEmails.has(profile.email)) {
       profile.accounts.forEach(acc => {
         if (this.selectedAccountSecrets.has(acc.secret)) {
-          if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) {
+          if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri, { id: acc.id, lastUsed: acc.lastUsed, useCount: acc.useCount, createdAt: acc.createdAt })) {
             addedCount++;
           }
         }
@@ -27,14 +27,14 @@ AuthenticatorApp.prototype.importFromSelectedProfile = function() {
 AuthenticatorApp.prototype.importAllFromCloud = function() {
   let addedCount = 0;
   this.loadedProfiles.forEach(profile => {
-    profile.accounts.forEach(acc => { if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) addedCount++; });
+    profile.accounts.forEach(acc => { if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri, { id: acc.id, lastUsed: acc.lastUsed, useCount: acc.useCount, createdAt: acc.createdAt })) addedCount++; });
   });
   this.applyFiltersAndSort(); this.saveAccounts();
   this.showToast(`Merged ${addedCount} accounts from all profiles`);
   this.syncToGithub();
 };
 
-AuthenticatorApp.prototype.addAccountNoRender = function(secret, issuer, label, uri) {
+AuthenticatorApp.prototype.addAccountNoRender = function(secret, issuer, label, uri, metadata = {}) {
   if (this.accounts.some(a => a.secret === secret)) return false;
   let cleanLabel = label || 'Account';
   let cleanIssuer = issuer || this.inferIssuer(cleanLabel, 'Unknown');
@@ -50,7 +50,12 @@ AuthenticatorApp.prototype.addAccountNoRender = function(secret, issuer, label, 
     }
   }
 
-  this.accounts.push({ id: Date.now() + Math.random(), secret, issuer: cleanIssuer, label: cleanLabel, uri, lastUsed: 0 });
+  const id = metadata.id || (Date.now() + Math.random());
+  const lastUsed = metadata.lastUsed || 0;
+  const useCount = metadata.useCount || 0;
+  const createdAt = metadata.createdAt || Date.now();
+
+  this.accounts.push({ id, secret, issuer: cleanIssuer, label: cleanLabel, uri, lastUsed, useCount, createdAt });
   return true;
 };
 
@@ -123,7 +128,7 @@ AuthenticatorApp.prototype.handleQRCode = function(uri) {
   }
 };
 
-AuthenticatorApp.prototype.addAccount = function(secret, issuer, label, uri) {
+AuthenticatorApp.prototype.addAccount = function(secret, issuer, label, uri, metadata = {}) {
   if (this.accounts.some(a => a.secret === secret)) return false;
   let cleanLabel = label || 'Account';
   let cleanIssuer = issuer || this.inferIssuer(cleanLabel, 'Unknown');
@@ -136,7 +141,12 @@ AuthenticatorApp.prototype.addAccount = function(secret, issuer, label, uri) {
     }
   }
 
-  this.accounts.push({ id: Date.now(), secret, issuer: cleanIssuer, label: cleanLabel, uri, lastUsed: 0 });
+  const id = metadata.id || Date.now();
+  const lastUsed = metadata.lastUsed || 0;
+  const useCount = metadata.useCount || 0;
+  const createdAt = metadata.createdAt || Date.now();
+
+  this.accounts.push({ id, secret, issuer: cleanIssuer, label: cleanLabel, uri, lastUsed, useCount, createdAt });
   this.applyFiltersAndSort(); this.saveAccounts();
   this.syncToGithub();
   return true;

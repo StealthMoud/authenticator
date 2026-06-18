@@ -49,6 +49,8 @@ function mergeGlobalVault(local, remote, userEmail) {
             label: acc.label,
             uri: acc.uri,
             lastUsed: acc.lastUsed || 0,
+            useCount: acc.useCount || 0,
+            createdAt: acc.createdAt || Date.now(),
             profiles: [userEmail]
           });
         } else {
@@ -56,6 +58,8 @@ function mergeGlobalVault(local, remote, userEmail) {
           const merged = { ...existing };
           merged.id = existing.id || acc.id || Date.now() + Math.random();
           merged.lastUsed = Math.max(existing.lastUsed || 0, acc.lastUsed || 0);
+          merged.useCount = Math.max(existing.useCount || 0, acc.useCount || 0);
+          merged.createdAt = Math.min(existing.createdAt || Infinity, acc.createdAt || Infinity) || Date.now();
           merged.label = acc.label || existing.label;
           merged.issuer = acc.issuer || existing.issuer;
           merged.uri = acc.uri || existing.uri;
@@ -100,6 +104,8 @@ function mergeGlobalVault(local, remote, userEmail) {
       label: acc.label,
       uri: acc.uri,
       lastUsed: acc.lastUsed || 0,
+      useCount: acc.useCount || 0,
+      createdAt: acc.createdAt || 0,
       profile: acc.profiles.join(', ')
     }));
 

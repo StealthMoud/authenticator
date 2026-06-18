@@ -143,7 +143,7 @@ AuthenticatorApp.prototype.render = function() {
         } catch (e) {}
       }
 
-      const addedDate = new Date(acc.id || Date.now()).toLocaleDateString();
+      const addedDate = new Date(acc.createdAt || acc.id || Date.now()).toLocaleDateString();
       const lastUsedStr = acc.lastUsed ? new Date(acc.lastUsed).toLocaleDateString() : 'Never';
       const useCountVal = acc.useCount || 0;
 
