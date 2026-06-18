@@ -174,9 +174,8 @@ AuthenticatorApp.prototype.syncToGithub = async function(silent = false) {
     if (res && res.success) {
       if (res.mergedAccounts && Array.isArray(res.mergedAccounts)) {
         this.accounts = res.mergedAccounts;
-        this.filteredAccounts = [...this.accounts];
         this.saveAccounts(true);
-        this.render();
+        this.applyFiltersAndSort();
       }
       if (!silent) {
         this.showToast(this.buildSyncMessage(res.pulled || 0, res.pushed || 0));
