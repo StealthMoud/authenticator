@@ -111,6 +111,23 @@ body {
   opacity: 0.9;
 }
 
+.resize-handle-left {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nesw-resize;
+  z-index: 2000;
+  opacity: 0.35;
+  transition: opacity var(--transition-fast) ease;
+  background-image: linear-gradient(225deg, transparent 30%, var(--text-muted) 30%, var(--text-muted) 40%, transparent 40%, transparent 50%, var(--text-muted) 50%, var(--text-muted) 60%, transparent 60%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 80%, transparent 80%);
+}
+
+.resize-handle-left:hover {
+  opacity: 0.9;
+}
+
 .app-container::after {
   content: '';
   position: absolute;

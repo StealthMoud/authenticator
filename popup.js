@@ -1065,8 +1065,9 @@ class AuthenticatorApp {
   }
 
   setupResizeHandler() {
-    const handle = document.getElementById('resize-handle');
-    if (!handle) return;
+    const handleRight = document.getElementById('resize-handle');
+    const handleLeft = document.getElementById('resize-handle-left');
+    if (!handleRight && !handleLeft) return;
 
     // Load persisted dimensions
     chrome.storage.local.get(['popupWidth', 'popupHeight'], (res) => {
@@ -1078,39 +1079,53 @@ class AuthenticatorApp {
       }
     });
 
-    handle.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      const startWidth = document.body.clientWidth;
-      const startHeight = document.body.clientHeight;
-      const startX = e.clientX;
-      const startY = e.clientY;
+    const bindDrag = (handle, direction) => {
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const startWidth = document.body.clientWidth;
+        const startHeight = document.body.clientHeight;
+        const startX = e.clientX;
+        const startY = e.clientY;
 
-      const onMouseMove = (moveEvent) => {
-        let newWidth = startWidth + (moveEvent.clientX - startX);
-        let newHeight = startHeight + (moveEvent.clientY - startY);
+        const onMouseMove = (moveEvent) => {
+          const deltaX = moveEvent.clientX - startX;
+          const deltaY = moveEvent.clientY - startY;
 
-        // Clamp to Chrome popup boundaries
-        newWidth = Math.max(380, Math.min(800, newWidth));
-        newHeight = Math.max(520, Math.min(600, newHeight));
+          let newWidth = startWidth;
+          if (direction === 'right') {
+            newWidth += deltaX;
+          } else if (direction === 'left') {
+            newWidth -= deltaX;
+          }
 
-        document.body.style.width = `${newWidth}px`;
-        document.body.style.height = `${newHeight}px`;
-      };
+          let newHeight = startHeight + deltaY;
 
-      const onMouseUp = () => {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
+          // Clamp to Chrome popup boundaries
+          newWidth = Math.max(380, Math.min(800, newWidth));
+          newHeight = Math.max(520, Math.min(600, newHeight));
 
-        // Persist dimensions
-        chrome.storage.local.set({
-          popupWidth: document.body.clientWidth,
-          popupHeight: document.body.clientHeight
-        });
-      };
+          document.body.style.width = `${newWidth}px`;
+          document.body.style.height = `${newHeight}px`;
+        };
 
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-    });
+        const onMouseUp = () => {
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+
+          // Persist dimensions
+          chrome.storage.local.set({
+            popupWidth: document.body.clientWidth,
+            popupHeight: document.body.clientHeight
+          });
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+    };
+
+    if (handleRight) bindDrag(handleRight, 'right');
+    if (handleLeft) bindDrag(handleLeft, 'left');
   }
 }
 
