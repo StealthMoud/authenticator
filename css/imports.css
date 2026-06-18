@@ -1,0 +1,189 @@
+/* ==================== Import Modal Specifics ==================== */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 14px;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-glass);
+}
+
+.section-divider span {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.cloud-fetch-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: hsla(40, 95%, 50%, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.cloud-fetch-notice svg {
+  flex-shrink: 0;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--primary-light);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  font-family: var(--font);
+  font-size: 0.7rem;
+  padding: 0;
+  transition: color var(--transition-fast) ease;
+}
+
+.link-btn:hover {
+  color: var(--accent);
+}
+
+/* Drop Zone */
+.drop-zone {
+  border: 2px dashed var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-slow) var(--spring-curve);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.drop-zone:hover, .drop-zone.dragover {
+  border-color: var(--primary);
+  background: hsla(250, 85%, 65%, 0.04);
+  transform: scale(1.02);
+}
+
+.drop-zone-icon {
+  color: var(--primary-light);
+  margin-bottom: 8px;
+  transition: transform var(--transition-slow) var(--spring-curve);
+}
+
+.drop-zone:hover .drop-zone-icon {
+  transform: translateY(-2px) scale(1.1);
+}
+
+.drop-zone p {
+  font-size: 0.75rem;
+  margin-bottom: 0;
+}
+
+/* ==================== Cloud Accounts Preview List ==================== */
+.cloud-accounts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 12px;
+}
+
+.cloud-account-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  user-select: none;
+}
+
+.cloud-account-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--border-bright);
+}
+
+.cloud-account-item.active {
+  background: hsla(250, 85%, 65%, 0.15);
+  border-color: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+
+.cloud-account-checkbox {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: all var(--transition-fast) ease;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.cloud-account-item.active .cloud-account-checkbox {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.cloud-account-checkbox svg {
+  stroke-width: 3px;
+  width: 10px;
+  height: 10px;
+}
+
+.cloud-account-item .brand-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.cloud-account-item.active .brand-icon {
+  color: var(--primary);
+}
+
+.cloud-account-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.cloud-account-name {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cloud-account-label {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

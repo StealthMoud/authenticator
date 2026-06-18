@@ -1,0 +1,225 @@
+/* ==================== Settings Panel ==================== */
+.settings-content {
+  width: 340px;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+}
+
+.settings-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.settings-section-title svg {
+  color: var(--primary-light);
+}
+
+/* Config help text */
+.config-help {
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--primary);
+}
+
+.config-help b {
+  color: white;
+}
+
+.config-help code {
+  background: hsla(250, 85%, 65%, 0.15);
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-family: monospace;
+  color: var(--primary-light);
+}
+
+/* Settings inputs */
+#settings-modal input,
+#settings-setup-view input {
+  width: 100%;
+  padding: 10px 12px;
+  background: hsla(222, 24%, 3%, 0.6);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  color: white;
+  font-family: var(--font);
+  font-size: 0.75rem;
+  margin-bottom: 8px;
+  outline: none;
+  transition: all var(--transition-fast) var(--spring-curve);
+}
+
+#settings-modal input:focus,
+#settings-setup-view input:focus {
+  border-color: var(--primary);
+  background: hsla(222, 24%, 2%, 0.8);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+/* Connected state info */
+.connected-info {
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: var(--radius-md);
+  padding: 2px 0;
+  margin-bottom: 12px;
+  border: 1px solid var(--border-glass);
+  overflow: hidden;
+}
+
+.connected-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 0.72rem;
+}
+
+.connected-row + .connected-row {
+  border-top: 1px solid var(--border-glass);
+}
+
+.connected-label {
+  color: var(--text-dim);
+  font-weight: 500;
+}
+
+.connected-value {
+  color: var(--text-main);
+  font-weight: 600;
+  max-width: 160px;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-ok {
+  color: var(--accent) !important;
+}
+
+.status-fail {
+  color: var(--danger) !important;
+}
+
+/* Disconnect button */
+.btn-disconnect {
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  background: rgba(244, 63, 94, 0.04);
+  color: var(--danger);
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-disconnect:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px var(--danger-glow);
+}
+
+.btn-disconnect:active {
+  transform: scale(0.97);
+}
+
+/* Danger zone */
+.danger-section {
+  border: 1px solid rgba(244, 63, 94, 0.15);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background: rgba(244, 63, 94, 0.02);
+}
+
+.danger-title {
+  border-bottom-color: rgba(244, 63, 94, 0.12) !important;
+}
+
+.danger-title svg {
+  color: var(--danger) !important;
+}
+
+.danger-description {
+  font-size: 0.68rem !important;
+  color: var(--text-muted) !important;
+  margin-bottom: 10px !important;
+}
+
+.btn-danger-action {
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(244, 63, 94, 0.25);
+  background: rgba(244, 63, 94, 0.05);
+  color: var(--danger);
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-danger-action:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px var(--danger-glow);
+}
+
+.btn-danger-action:active {
+  transform: scale(0.97);
+}
+
+.connected-error-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(244, 63, 94, 0.06);
+  border-top: 1px solid rgba(244, 63, 94, 0.15);
+  color: var(--danger);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.connected-error-box svg {
+  flex-shrink: 0;
+}
+
+.settings-actions-row {
+  display: flex;
+  gap: 6px;
+}
+
+.settings-actions-row button {
+  flex: 1;
+}

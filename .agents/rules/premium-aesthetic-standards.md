@@ -15,6 +15,7 @@ This rule defines the core visual and structural philosophy of the USER (Stealth
 
 ## 2. Structural Philosophy: "Radical Clarity"
 - **Consolidation over Fragmentation**: If multiple pages do similar things, consolidate them (e.g., the Focus Timer overhaul).
+- **Strict Code Length Constraints**: No single source code file (HTML, CSS, JS, etc.) must ever exceed 400 lines (with an absolute maximum cap of 500 lines). If a file grows near this limit, it must be refactored, split, and reorganized into modular components. Never cross this limit under any circumstances.
 - **Semantic Naming**: Use evocative but clear names (e.g., "DeepGrow" vs "GoalOS", "Focus" vs "Sanctuary").
 - **Mobile First**: All layouts must be verified for mobile responsiveness. Use `min(relative, absolute)` units for stage elements.
 

@@ -1,0 +1,200 @@
+/* ==================== Account List ==================== */
+.account-list {
+  padding: 12px 20px 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ==================== Account Card ==================== */
+.account-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: min-height 0.25s var(--spring-curve), padding-right 0.25s var(--spring-curve), transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: paneEnter var(--transition-slow) var(--spring-curve) backwards;
+}
+
+.account-item:hover {
+  border-color: var(--primary);
+  background-color: var(--bg-card-hover);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-premium), 0 4px 15px -3px var(--primary-glow);
+  padding-right: 124px;
+}
+
+.account-item:active {
+  transform: scale(0.98) translateX(2px);
+}
+
+.account-icon-wrapper {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  transition: all var(--transition-fast) var(--spring-curve);
+}
+
+.account-item:hover .account-icon-wrapper {
+  background: hsla(250, 85%, 65%, 0.1);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  transform: scale(1.08) rotate(-4deg);
+}
+
+.brand-icon {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--transition-fast) var(--spring-curve);
+}
+
+.account-item:hover .brand-icon {
+  transform: scale(1.1);
+}
+
+/* Click/Copy custom spring feedback */
+.account-item.copied-pulse {
+  animation: cardCopyFeedback 0.4s var(--spring-curve) forwards;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.account-label {
+  font-size: 0.65rem;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: white-space var(--transition-fast) ease;
+}
+
+.account-item:hover .account-label {
+  white-space: normal;
+  word-break: break-all;
+}
+
+.account-issuer {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color var(--transition-fast) ease;
+}
+
+.account-item:hover .account-issuer {
+  color: var(--primary-light);
+}
+
+.account-otp {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #ffffff 40%, var(--primary-light) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-variant-numeric: tabular-nums;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.08));
+  flex-shrink: 0;
+  transition: all var(--transition-fast) ease;
+}
+
+.account-item:hover .account-otp {
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
+}
+
+/* ==================== Account Card Actions ==================== */
+.account-actions {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%) translateX(12px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity var(--transition-fast) ease, transform var(--transition-fast) var(--spring-curve);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.account-item:hover .account-actions {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+  pointer-events: auto;
+}
+
+.account-actions button {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.account-actions button:hover {
+  transform: scale(1.1) translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.account-actions button:active {
+  transform: scale(0.92);
+}
+
+.account-actions .action-copy:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.account-actions .action-edit:hover {
+  background: var(--warning);
+  color: white;
+  border-color: var(--warning);
+}
+
+.account-actions .action-delete:hover {
+  background: var(--danger);
+  color: white;
+  border-color: var(--danger);
+}

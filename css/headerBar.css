@@ -1,0 +1,231 @@
+/* ==================== Header ==================== */
+header {
+  padding: 14px 20px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-glass);
+  background: hsla(222, 24%, 6%, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  z-index: 20;
+}
+
+header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-hover), transparent);
+  opacity: 0.5;
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 0 8px var(--primary-glow));
+  transition: all var(--transition-slow) var(--spring-curve);
+}
+
+.logo:hover {
+  transform: scale(1.1) rotate(6deg);
+  filter: drop-shadow(0 0 12px var(--primary));
+}
+
+h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, var(--text-dim) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.header-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.header-actions button {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-dim);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.header-actions button:hover {
+  background: hsla(250, 85%, 65%, 0.12);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  transform: translateY(-1.5px) scale(1.05);
+  box-shadow: 0 4px 15px -3px var(--primary-glow);
+}
+
+.header-actions button:active {
+  transform: scale(0.95);
+}
+
+.header-actions button svg {
+  width: 15px;
+  height: 15px;
+  transition: transform var(--transition-fast) var(--spring-curve);
+}
+
+.header-actions button:hover svg {
+  transform: scale(1.1);
+}
+
+/* ==================== Connection Status Badge ==================== */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-family: var(--font);
+  border: 1px solid var(--border-glass);
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  margin-top: 2px;
+  line-height: 1;
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  letter-spacing: 0.02em;
+  max-width: 140px;
+}
+
+#status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-badge:hover {
+  border-color: var(--border-bright);
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-0.5px) scale(1.03);
+}
+
+.status-badge:active {
+  transform: scale(0.97);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all var(--transition-fast) ease;
+}
+
+.status-connected .status-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.status-connected #status-text {
+  color: var(--accent);
+}
+
+.status-disconnected .status-dot {
+  background: var(--warning);
+  box-shadow: 0 0 6px var(--warning-glow);
+}
+
+.status-disconnected #status-text {
+  color: var(--warning);
+}
+
+.status-error .status-dot {
+  background: var(--danger);
+  box-shadow: 0 0 8px var(--danger);
+  animation: status-pulse 2s infinite ease-in-out;
+}
+
+.status-error #status-text {
+  color: var(--danger);
+}
+
+/* badge flash animation when new accounts are pulled */
+.badge-flash {
+  animation: badgePulse 1s ease-in-out 3;
+}
+
+.badge-flash #status-text {
+  color: var(--accent) !important;
+}
+
+/* ==================== Sync Error Banner ==================== */
+#sync-error-banner {
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.2);
+  margin: 0 24px 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: #fda4af;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: slideDown 0.4s ease-out;
+  z-index: 50;
+}
+
+.sync-error-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sync-error-content span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#fix-sync-btn {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.6rem;
+  font-family: var(--font);
+  transition: all 0.2s;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+#fix-sync-btn:hover {
+  filter: brightness(1.2);
+  transform: scale(1.05);
+}
