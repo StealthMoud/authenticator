@@ -12,6 +12,7 @@ class AuthenticatorApp {
     this.currentEmail = '';
     this.loadedProfiles = [];
     this.editingAccountId = null;
+    this.selectedProfileEmails = new Set();
     this.selectedAccountSecrets = new Set();
 
     // cache dom refs
@@ -567,6 +568,10 @@ class AuthenticatorApp {
         if (this.loadedProfiles.length === 0) {
           this.showToast('No profiles found in cloud vault');
         } else {
+          this.selectedProfileEmails.clear();
+          this.selectedAccountSecrets.clear();
+          const previewContainer = document.getElementById('github-accounts-preview');
+          if (previewContainer) previewContainer.classList.add('hidden');
           this.renderProfileSelection();
         }
       } else {
@@ -582,35 +587,64 @@ class AuthenticatorApp {
     if (!container) return;
     container.innerHTML = '';
     document.getElementById('profile-selection-list').classList.remove('hidden');
-    this.loadedProfiles.forEach((profile, index) => {
+    this.loadedProfiles.forEach((profile) => {
       const row = document.createElement('div');
       row.className = 'sort-chip';
       row.style.width = '100%'; row.style.borderRadius = '8px';
       row.style.display = 'flex'; row.style.justifyContent = 'space-between';
       row.style.padding = '8px 12px'; row.style.marginBottom = '4px';
-      row.innerHTML = `<span style="font-size: 0.75rem">${profile.email}</span><span style="font-size: 0.6rem; opacity: 0.6">${profile.accounts.length} items</span>`;
-      row.onclick = () => {
-        document.querySelectorAll('#github-profiles-list .sort-chip').forEach(c => c.classList.remove('active'));
+
+      if (this.selectedProfileEmails.has(profile.email)) {
         row.classList.add('active');
-        this.selectedProfileIndex = index;
+      }
 
-        // select all accounts by default
-        this.selectedAccountSecrets.clear();
-        profile.accounts.forEach(acc => {
-          if (acc && acc.secret) this.selectedAccountSecrets.add(acc.secret);
-        });
-
-        this.renderAccountPreview(profile.accounts);
+      row.innerHTML = `<span style="font-size: 0.75rem">${profile.email}</span><span style="font-size: 0.6rem; opacity: 0.6">${profile.accounts.length} items</span>`;
+      
+      row.onclick = () => {
+        if (this.selectedProfileEmails.has(profile.email)) {
+          this.selectedProfileEmails.delete(profile.email);
+          row.classList.remove('active');
+        } else {
+          this.selectedProfileEmails.add(profile.email);
+          row.classList.add('active');
+        }
+        this.updateCombinedAccounts();
       };
       container.appendChild(row);
     });
+  }
+
+  updateCombinedAccounts() {
+    const combinedAccounts = [];
+    const addedSecrets = new Set();
+    
+    this.loadedProfiles.forEach(profile => {
+      if (this.selectedProfileEmails.has(profile.email)) {
+        profile.accounts.forEach(acc => {
+          if (acc && acc.secret && !addedSecrets.has(acc.secret)) {
+            addedSecrets.add(acc.secret);
+            combinedAccounts.push(acc);
+          }
+        });
+      }
+    });
+
+    this.selectedAccountSecrets.clear();
+    combinedAccounts.forEach(acc => this.selectedAccountSecrets.add(acc.secret));
+
+    const previewContainer = document.getElementById('github-accounts-preview');
+    if (combinedAccounts.length === 0) {
+      if (previewContainer) previewContainer.classList.add('hidden');
+    } else {
+      if (previewContainer) previewContainer.classList.remove('hidden');
+      this.renderAccountPreview(combinedAccounts);
+    }
   }
 
   renderAccountPreview(accounts) {
     const container = document.getElementById('github-accounts-list');
     if (!container) return;
     container.innerHTML = '';
-    document.getElementById('github-accounts-preview').classList.remove('hidden');
     
     // Update heading to show selection count
     const previewTitle = document.getElementById('preview-title');
@@ -645,16 +679,19 @@ class AuthenticatorApp {
   }
 
   importFromSelectedProfile() {
-    if (this.selectedProfileIndex === undefined) { this.showToast('Select a profile first'); return; }
-    const profile = this.loadedProfiles[this.selectedProfileIndex];
+    if (this.selectedProfileEmails.size === 0) { this.showToast('Select at least one profile'); return; }
     if (this.selectedAccountSecrets.size === 0) { this.showToast('Select at least one account'); return; }
     
     let addedCount = 0;
-    profile.accounts.forEach(acc => {
-      if (this.selectedAccountSecrets.has(acc.secret)) {
-        if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) {
-          addedCount++;
-        }
+    this.loadedProfiles.forEach(profile => {
+      if (this.selectedProfileEmails.has(profile.email)) {
+        profile.accounts.forEach(acc => {
+          if (this.selectedAccountSecrets.has(acc.secret)) {
+            if (this.addAccountNoRender(acc.secret, acc.issuer, acc.label, acc.uri)) {
+              addedCount++;
+            }
+          }
+        });
       }
     });
     
