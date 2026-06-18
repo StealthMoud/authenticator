@@ -42,7 +42,7 @@
 }
 
 .account-item.details-expanded:hover {
-  min-height: 180px;
+  min-height: 204px;
 }
 
 .account-index {
@@ -83,6 +83,11 @@
   box-sizing: border-box;
   position: relative;
   height: 74px;
+  transition: height 0.25s var(--spring-curve);
+}
+
+.account-item:hover .account-card-main {
+  height: 98px;
 }
 
 .account-icon-wrapper {
@@ -176,10 +181,23 @@
   top: 23px;
   transition: all var(--transition-fast) var(--spring-curve);
   z-index: 5;
+  cursor: pointer;
+}
+
+.account-otp:hover {
+  filter: drop-shadow(0 0 12px var(--primary-glow)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+}
+
+.account-otp:active {
+  transform: scale(0.95);
 }
 
 .account-item:hover .account-otp {
   transform: translateY(39px);
+}
+
+.account-item:hover .account-otp:active {
+  transform: translateY(39px) scale(0.95);
 }
 
 /* ==================== Account Card Actions ==================== */

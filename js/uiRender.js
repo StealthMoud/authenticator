@@ -197,29 +197,31 @@ AuthenticatorApp.prototype.render = function() {
           ` : ''}
         </div>`;
 
-      // click on index number -> copy
+      const copyCode = (e) => {
+        e.stopPropagation();
+        const totp = new OTPAuth.TOTP({ secret: acc.secret });
+        navigator.clipboard.writeText(totp.generate());
+        this.showToast('Copied to clipboard');
+        acc.lastUsed = Date.now();
+        acc.useCount = (acc.useCount || 0) + 1;
+        this.saveAccounts(true);
+
+        const useCountEl = el.querySelector('.details-value-usecount');
+        if (useCountEl) useCountEl.textContent = acc.useCount;
+        const lastUsedEl = el.querySelector('.details-value-lastused');
+        if (lastUsedEl) lastUsedEl.textContent = new Date(acc.lastUsed).toLocaleDateString();
+
+        el.classList.remove('copied-pulse');
+        void el.offsetWidth; // trigger reflow to restart keyframe animation
+        el.classList.add('copied-pulse');
+        setTimeout(() => el.classList.remove('copied-pulse'), 400);
+      };
+
       const indexEl = el.querySelector('.account-index');
-      if (indexEl) {
-        indexEl.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const totp = new OTPAuth.TOTP({ secret: acc.secret });
-          navigator.clipboard.writeText(totp.generate());
-          this.showToast('Copied to clipboard');
-          acc.lastUsed = Date.now();
-          acc.useCount = (acc.useCount || 0) + 1;
-          this.saveAccounts(true);
+      if (indexEl) indexEl.addEventListener('click', copyCode);
 
-          const useCountEl = el.querySelector('.details-value-usecount');
-          if (useCountEl) useCountEl.textContent = acc.useCount;
-          const lastUsedEl = el.querySelector('.details-value-lastused');
-          if (lastUsedEl) lastUsedEl.textContent = new Date(acc.lastUsed).toLocaleDateString();
-
-          el.classList.remove('copied-pulse');
-          void el.offsetWidth; // trigger reflow to restart keyframe animation
-          el.classList.add('copied-pulse');
-          setTimeout(() => el.classList.remove('copied-pulse'), 400);
-        });
-      }
+      const otpEl = el.querySelector('.account-otp');
+      if (otpEl) otpEl.addEventListener('click', copyCode);
 
       // action: explicit copy
       el.querySelector('.action-copy').addEventListener('click', (e) => {
