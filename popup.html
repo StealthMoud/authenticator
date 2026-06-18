@@ -110,8 +110,14 @@
               <div id="github-profiles-list" style="max-height:120px; overflow-y:auto; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;"></div>
               
               <div style="display: flex; gap: 8px;">
-                <button id="import-selected-profile" class="btn-premium" style="font-size: 0.7rem; padding: 10px;">Import Selected</button>
-                <button id="import-all-github" class="btn-premium" style="font-size: 0.7rem; padding: 10px; background: var(--accent);">Import All Profiles</button>
+                <button id="import-selected-profile" class="btn-premium" style="font-size: 0.7rem; padding: 10px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  Import Selected
+                </button>
+                <button id="import-all-github" class="btn-premium" style="font-size: 0.7rem; padding: 10px; background: var(--accent);">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.886H3.894l4.948 3.596L6.93 18.368 12 14.772l5.07 3.596-1.912-5.886 4.948-3.596h-6.194L12 3z"/></svg>
+                  Import All Profiles
+                </button>
               </div>
             </div>
             
@@ -228,8 +234,14 @@
         <h3 id="confirm-title" style="margin-bottom: 8px;">Confirm Action</h3>
         <p id="confirm-message" style="margin-bottom: 20px; font-size: 0.8rem;">Are you sure?</p>
         <div style="display: flex; gap: 10px; justify-content: center;">
-          <button id="confirm-cancel-btn" class="btn-action btn-primary" style="height: 38px; width: 100px; flex-direction: row;">Cancel</button>
-          <button id="confirm-proceed-btn" class="btn-action btn-danger" style="height: 38px; width: 100px; flex-direction: row; background: var(--danger); color: white;">Confirm</button>
+          <button id="confirm-cancel-btn" class="btn-action btn-primary" style="height: 38px; width: 100px; flex-direction: row;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+            Cancel
+          </button>
+          <button id="confirm-proceed-btn" class="btn-action btn-danger" style="height: 38px; width: 100px; flex-direction: row; background: var(--danger); color: white;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Confirm
+          </button>
         </div>
       </div>
     </div>
