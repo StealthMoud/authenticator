@@ -1,5 +1,9 @@
 # Authenticator
 
+<p align="center">
+  <img src="screenshot.png" alt="Authenticator Showcase" width="380">
+</p>
+
 A premium, secure, and beautiful Chrome extension for managing two-factor authentication (2FA) codes. Designed with glassmorphism aesthetics, responsive micro-animations, and direct GitHub-backed synchronization to keep your secrets private and in your control.
 
 ## Screenshots
