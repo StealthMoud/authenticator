@@ -19,6 +19,7 @@
   align-items: stretch;
   gap: 0;
   min-height: 74px;
+  flex-shrink: 0;
   transition: min-height 0.25s var(--spring-curve), transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   cursor: pointer;
   position: relative;
@@ -37,11 +38,28 @@
 }
 
 .account-item.details-expanded {
-  min-height: 154px;
+  min-height: 180px;
 }
 
 .account-item.details-expanded:hover {
-  min-height: 154px;
+  min-height: 180px;
+}
+
+.account-index {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  opacity: 0.35;
+  min-width: 22px;
+  text-align: right;
+  margin-right: 4px;
+  font-family: monospace;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.account-item.editing .account-index {
+  margin-top: 13px;
 }
 
 .account-card-main {

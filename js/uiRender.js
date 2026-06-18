@@ -75,6 +75,7 @@ AuthenticatorApp.prototype.render = function() {
       // inline edit mode
       el.className = 'account-item editing';
       el.innerHTML = `
+        <div class="account-index">#${i + 1}</div>
         <div class="account-icon-wrapper">
           ${this.getIssuerIcon(acc.issuer)}
         </div>
@@ -149,6 +150,7 @@ AuthenticatorApp.prototype.render = function() {
 
       el.innerHTML = `
         <div class="account-card-main">
+          <div class="account-index">#${i + 1}</div>
           <div class="account-icon-wrapper">
             ${this.getIssuerIcon(acc.issuer)}
           </div>
@@ -201,6 +203,12 @@ AuthenticatorApp.prototype.render = function() {
               <span class="details-value">${algo}/${digits}d/${period}</span>
             </div>
           </div>
+          ${acc.profile ? `
+            <div style="margin-top: 8px; border-top: 1px dashed var(--border-glass); padding-top: 8px;">
+              <span class="details-label" style="display: block; margin-bottom: 2px;">Synced Profiles</span>
+              <span class="details-value" style="font-family: var(--font); font-size: 0.72rem; color: var(--text-dim); display: block; word-break: break-all; text-transform: none;">${this.escapeHtml(acc.profile)}</span>
+            </div>
+          ` : ''}
         </div>`;
 
       // click on card body -> copy
