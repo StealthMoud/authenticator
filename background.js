@@ -59,7 +59,10 @@ function mergeGlobalVault(local, remote, userEmail) {
           merged.id = existing.id || acc.id || Date.now() + Math.random();
           merged.lastUsed = Math.max(existing.lastUsed || 0, acc.lastUsed || 0);
           merged.useCount = Math.max(existing.useCount || 0, acc.useCount || 0);
-          merged.createdAt = Math.min(existing.createdAt || Infinity, acc.createdAt || Infinity) || Date.now();
+          const remoteTime = (existing.createdAt && existing.createdAt !== Infinity) ? existing.createdAt : Infinity;
+          const localTime = (acc.createdAt && acc.createdAt !== Infinity) ? acc.createdAt : Infinity;
+          const minTime = Math.min(remoteTime, localTime);
+          merged.createdAt = minTime === Infinity ? Date.now() : minTime;
           merged.label = acc.label || existing.label;
           merged.issuer = acc.issuer || existing.issuer;
           merged.uri = acc.uri || existing.uri;

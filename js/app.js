@@ -121,10 +121,17 @@ class AuthenticatorApp {
         // Auto-fix any missing/Unknown issuers from the label if possible
         let modified = false;
 
-        // Backfill createdAt for accounts that predate this field
+        // Backfill createdAt for accounts that predate this field.
+        // Only trust acc.id as a creation timestamp if it predates the
+        // merge-overwrite bug (June 18 2026). Otherwise leave it empty
+        // so the UI shows "Unknown" rather than a wrong date.
+        const mergeCorruptionCutoff = 1750204800000; // 2026-06-18T00:00:00Z
         this.accounts.forEach(acc => {
           if (!acc.createdAt && acc.id) {
-            acc.createdAt = acc.id;
+            if (typeof acc.id === 'number' && acc.id < mergeCorruptionCutoff) {
+              acc.createdAt = acc.id;
+            }
+            // else leave createdAt falsy — the next sync will set it properly
             modified = true;
           }
         });
