@@ -44,7 +44,9 @@ if (typeof chrome === 'undefined' || !chrome.storage) {
             { id: '32', issuer: 'Bugcrowd', label: 'bugcrowd_research', secret: 'JBSWY3DPEHPK3PXP' },
             { id: '33', issuer: 'Intigriti', label: 'intigriti_hacker', secret: 'JBSWY3DPEHPK3PXP' },
             { id: '34', issuer: 'YesWeHack', label: 'yeswehack_vdp', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '35', issuer: 'Synack', label: 'synack_srt', secret: 'JBSWY3DPEHPK3PXP' }
+            { id: '35', issuer: 'Synack', label: 'synack_srt', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '36', issuer: 'Notion', label: 'notion_workspace', secret: 'JBSWY3DPEHPK3PXP' },
+            { id: '37', issuer: 'ngrok', label: 'ngrok_tunnels', secret: 'JBSWY3DPEHPK3PXP' }
           ];
 
           keys.forEach(k => {
@@ -1410,6 +1412,8 @@ class AuthenticatorApp {
     else if (clean.includes('intigriti')) key = 'intigriti';
     else if (clean.includes('yeswehack')) key = 'yeswehack';
     else if (clean.includes('synack')) key = 'synack';
+    else if (clean.includes('notion')) key = 'notion';
+    else if (clean.includes('ngrok')) key = 'ngrok';
 
     if (key && window.BRAND_ICONS && window.BRAND_ICONS[key]) {
       const icon = window.BRAND_ICONS[key];
@@ -1435,7 +1439,7 @@ class AuthenticatorApp {
       'bitbucket', 'digitalocean', 'heroku', 'cloudflare', 'openai', 'zoom', 'spotify', 
       'paypal', 'stripe', 'adobe', 'linkedin', 'yahoo', 'amazon', 'aws', 'apple', 
       'coinbase', 'binance', 'voorivex', 'hackerone', 'h1', 'bugcrowd', 'intigriti', 
-      'yeswehack', 'synack'
+      'yeswehack', 'synack', 'notion', 'ngrok'
     ];
     const foundBrand = brands.find(b => lblLower.includes(b));
     if (foundBrand) {
@@ -1445,6 +1449,8 @@ class AuthenticatorApp {
       if (foundBrand === 'bugcrowd') return 'Bugcrowd';
       if (foundBrand === 'intigriti') return 'Intigriti';
       if (foundBrand === 'synack') return 'Synack';
+      if (foundBrand === 'notion') return 'Notion';
+      if (foundBrand === 'ngrok') return 'ngrok';
       return foundBrand.charAt(0).toUpperCase() + foundBrand.slice(1);
     }
     return currentIssuer || 'Unknown';
