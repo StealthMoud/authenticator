@@ -1318,8 +1318,8 @@ class AuthenticatorApp {
 
         // click on card body -> copy
         el.addEventListener('click', (e) => {
-          // dont copy if they clicked an action button
-          if (e.target.closest('.account-actions')) return;
+          // dont copy if they clicked an action button or the cycle button
+          if (e.target.closest('.account-actions') || e.target.closest('.badge-cycle-btn')) return;
           const totp = new OTPAuth.TOTP({ secret: acc.secret });
           navigator.clipboard.writeText(totp.generate());
           this.showToast('Copied to clipboard');

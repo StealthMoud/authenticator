@@ -1700,8 +1700,8 @@ h1 {
 
 .account-profile-badges {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   margin-top: 4px;
   width: 100%;
 }
@@ -1721,7 +1721,7 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 140px;
-  flex-shrink: 0;
+  flex-shrink: 1;
   display: inline-block;
   user-select: none;
 }
