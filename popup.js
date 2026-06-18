@@ -39,14 +39,14 @@ if (typeof chrome === 'undefined' || !chrome.storage) {
             { id: '27', issuer: 'Apple', label: 'icloud_storage', secret: 'JBSWY3DPEHPK3PXP' },
             { id: '28', issuer: 'Coinbase', label: 'crypto_wallet', secret: 'JBSWY3DPEHPK3PXP' },
             { id: '29', issuer: 'Binance', label: 'crypto_exchange', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '30', issuer: 'Voorivex', label: 'voorivex.academy', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '31', issuer: 'HackerOne', label: 'h1_security', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '32', issuer: 'Bugcrowd', label: 'bugcrowd_research', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '33', issuer: 'Intigriti', label: 'intigriti_hacker', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '34', issuer: 'YesWeHack', label: 'yeswehack_vdp', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '35', issuer: 'Synack', label: 'synack_srt', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '36', issuer: 'Notion', label: 'notion_workspace', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '37', issuer: 'ngrok', label: 'ngrok_tunnels', secret: 'JBSWY3DPEHPK3PXP' }
+            { id: '30', issuer: 'Voorivex', label: 'voorivex.academy', secret: 'JBSWY3DPEHPK3PXP', profile: 'stealthmoud@gmail.com' },
+            { id: '31', issuer: 'HackerOne', label: 'h1_security', secret: 'JBSWY3DPEHPK3PXP', profile: 'seyedmahmoudmohseni@gmail.com' },
+            { id: '32', issuer: 'Bugcrowd', label: 'bugcrowd_research', secret: 'JBSWY3DPEHPK3PXP', profile: 'stealthmoud@gmail.com' },
+            { id: '33', issuer: 'Intigriti', label: 'intigriti_hacker', secret: 'JBSWY3DPEHPK3PXP', profile: 'mahmoodmohsiny1378116@gmail.com' },
+            { id: '34', issuer: 'YesWeHack', label: 'yeswehack_vdp', secret: 'JBSWY3DPEHPK3PXP', profile: 'seyedmahmoudmohseni@gmail.com' },
+            { id: '35', issuer: 'Synack', label: 'synack_srt', secret: 'JBSWY3DPEHPK3PXP', profile: 'seyedmahmoudmohseni@gmail.com' },
+            { id: '36', issuer: 'Notion', label: 'notion_workspace', secret: 'JBSWY3DPEHPK3PXP', profile: 'stealthmoud@gmail.com' },
+            { id: '37', issuer: 'ngrok', label: 'ngrok_tunnels', secret: 'JBSWY3DPEHPK3PXP', profile: 'mahmoodmohsiny1378116@gmail.com' }
           ];
 
           keys.forEach(k => {
@@ -183,10 +183,11 @@ class AuthenticatorApp {
 
   async loadAccounts() {
     return new Promise((resolve) => {
-      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError', 'syncErrorMessage'], (result) => {
+      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError', 'syncErrorMessage', 'loadedProfiles'], (result) => {
         this.accounts = result[this.storageKey] || [];
         this.privacyMode = result.privacyMode || false;
         this.sortAscending = (result.sortAscending !== undefined) ? result.sortAscending : true;
+        this.loadedProfiles = result.loadedProfiles || [];
         
         // Auto-fix any missing/Unknown issuers from the label if possible
         let modified = false;
@@ -199,6 +200,12 @@ class AuthenticatorApp {
             }
           }
         });
+
+        // Resolve profile emails from loadedProfiles
+        if (this.resolveProfileEmails()) {
+          modified = true;
+        }
+
         if (modified) {
           this.saveAccounts();
         }
@@ -210,6 +217,26 @@ class AuthenticatorApp {
         resolve();
       });
     });
+  }
+
+  resolveProfileEmails() {
+    if (!this.loadedProfiles || this.loadedProfiles.length === 0) return false;
+    let modified = false;
+    this.accounts.forEach(acc => {
+      // Find all profiles that contain this account secret
+      const matchingProfiles = this.loadedProfiles
+        .filter(p => p.accounts && p.accounts.some(remoteAcc => remoteAcc.secret === acc.secret))
+        .map(p => p.email);
+      
+      if (matchingProfiles.length > 0) {
+        const profileStr = matchingProfiles.join(', ');
+        if (acc.profile !== profileStr) {
+          acc.profile = profileStr;
+          modified = true;
+        }
+      }
+    });
+    return modified;
   }
 
   async loadGithubConfig() {
@@ -697,6 +724,11 @@ class AuthenticatorApp {
           }
         }
         this.loadedProfiles = Array.from(profileMap.values());
+        chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
+        if (this.resolveProfileEmails()) {
+          this.saveAccounts();
+          this.render();
+        }
         if (this.loadedProfiles.length === 0) {
           this.showToast('No profiles found in cloud vault');
         } else {
@@ -1188,7 +1220,10 @@ class AuthenticatorApp {
             ${this.getIssuerIcon(acc.issuer)}
           </div>
           <div class="account-info">
-            <span class="account-label">${this.escapeHtml(acc.label)}</span>
+            <div style="display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%;">
+              <span class="account-label">${this.escapeHtml(acc.label)}</span>
+              ${acc.profile ? `<span class="account-profile-badge" title="Imported from: ${this.escapeHtml(acc.profile)}">${this.escapeHtml(acc.profile)}</span>` : ''}
+            </div>
             <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
           </div>
           <div class="account-otp">--- ---</div>
