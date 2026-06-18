@@ -16,16 +16,17 @@ async function getUserInfo() {
   });
 }
 
-function mergeVaults(local, remote) {
+function mergeGlobalVault(local, remote, userEmail) {
   const map = new Map();
   let pulled = 0;
   let pushed = 0;
   
-  // index remote accounts first
+  // Index remote accounts by secret
   if (Array.isArray(remote)) {
     remote.forEach(acc => {
       if (acc && acc.secret) {
-        map.set(acc.secret, acc);
+        const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
+        map.set(cleanSecret, { ...acc, profiles: acc.profiles || [] });
       }
     });
   }
@@ -34,33 +35,74 @@ function mergeVaults(local, remote) {
   if (Array.isArray(local)) {
     local.forEach(acc => {
       if (acc && acc.secret) {
-        localSecrets.add(acc.secret);
-        const existing = map.get(acc.secret);
+        const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
+        localSecrets.add(cleanSecret);
+        
+        const existing = map.get(cleanSecret);
         if (!existing) {
-          // local-only account, will be pushed to remote
+          // local-only account, pushed to remote
           pushed++;
-          map.set(acc.secret, acc);
+          map.set(cleanSecret, {
+            id: acc.id || Date.now() + Math.random(),
+            secret: acc.secret,
+            issuer: acc.issuer,
+            label: acc.label,
+            uri: acc.uri,
+            lastUsed: acc.lastUsed || 0,
+            profiles: [userEmail]
+          });
         } else {
-          const merged = { ...existing, ...acc };
+          // existing account, merge details and profiles
+          const merged = { ...existing };
           merged.lastUsed = Math.max(existing.lastUsed || 0, acc.lastUsed || 0);
           merged.label = acc.label || existing.label;
           merged.issuer = acc.issuer || existing.issuer;
-          map.set(acc.secret, merged);
+          merged.uri = acc.uri || existing.uri;
+          if (!merged.profiles.includes(userEmail)) {
+            merged.profiles.push(userEmail);
+          }
+          map.set(cleanSecret, merged);
         }
       }
     });
   }
   
-  // count remote-only accounts that local didn't have
+  // If remote account has userEmail in profiles, but NOT in local, user deleted it locally
+  map.forEach((acc, cleanSecret) => {
+    if (acc.profiles.includes(userEmail) && !localSecrets.has(cleanSecret)) {
+      acc.profiles = acc.profiles.filter(email => email !== userEmail);
+      if (acc.profiles.length === 0) {
+        map.delete(cleanSecret);
+      }
+    }
+  });
+
+  // Count pulled accounts
   if (Array.isArray(remote)) {
     remote.forEach(acc => {
-      if (acc && acc.secret && !localSecrets.has(acc.secret)) {
-        pulled++;
+      if (acc && acc.secret) {
+        const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
+        if (acc.profiles && acc.profiles.includes(userEmail) && !localSecrets.has(cleanSecret)) {
+          pulled++;
+        }
       }
     });
   }
-  
-  return { accounts: Array.from(map.values()), pulled, pushed };
+
+  const allAccounts = Array.from(map.values());
+  const localClientAccounts = allAccounts
+    .filter(acc => acc.profiles.includes(userEmail))
+    .map(acc => ({
+      id: acc.id || Date.now() + Math.random(),
+      secret: acc.secret,
+      issuer: acc.issuer,
+      label: acc.label,
+      uri: acc.uri,
+      lastUsed: acc.lastUsed || 0,
+      profile: acc.profiles.join(', ')
+    }));
+
+  return { commonAccounts: allAccounts, localAccounts: localClientAccounts, pulled, pushed };
 }
 
 function decodeBase64(str) {
@@ -83,8 +125,7 @@ async function handleGithubSync(data) {
   }
 
   const userEmail = await getUserInfo();
-  // each Chrome profile gets its own file inside a profiles/ directory
-  const fileName = `profiles/${userEmail.replace(/[@.]/g, '_')}.json`;
+  const fileName = 'profiles/common.json';
   const url = `https://api.github.com/repos/${ghRepo}/contents/${fileName}`;
   
   try {
@@ -110,13 +151,12 @@ async function handleGithubSync(data) {
       // file doesn't exist yet, that's fine - first sync
     }
 
-    // Bidirectional merge
-    const mergeResult = mergeVaults(data, remoteAccounts);
+    // Bidirectional merge into common vault
+    const mergeResult = mergeGlobalVault(data, remoteAccounts, userEmail);
 
     const profilePayload = {
-      email: userEmail,
-      updatedAt: new Date().toISOString(),
-      accounts: mergeResult.accounts
+      accounts: mergeResult.commonAccounts,
+      updatedAt: new Date().toISOString()
     };
 
     const putRes = await fetch(url, {
@@ -136,7 +176,7 @@ async function handleGithubSync(data) {
       return {
         success: true,
         profile: userEmail,
-        mergedAccounts: mergeResult.accounts,
+        mergedAccounts: mergeResult.localAccounts,
         pulled: mergeResult.pulled,
         pushed: mergeResult.pushed
       };

@@ -251,39 +251,33 @@ class AuthenticatorApp {
 
   async silentFetchAndResolveProfiles() {
     if (!this.ghToken || !this.ghRepo) return;
-    const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles`;
+    const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles/common.json`;
     try {
       const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
       if (res.ok) {
-        const files = await res.json();
-        const profileMap = new Map();
-        for (let f of files) {
-          if (f.name.endsWith('.json')) {
-            try {
-              const dataRes = await fetch(f.url, { headers: { 'Authorization': `token ${this.ghToken}` } });
-              if (dataRes.ok) {
-                const fileJson = await dataRes.json();
-                if (fileJson && fileJson.content) {
-                  const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
-                  const profileData = JSON.parse(decoded);
-                  if (profileData && profileData.email) {
-                    const existing = profileMap.get(profileData.email);
-                    if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
-                      profileMap.set(profileData.email, profileData);
-                    }
+        const fileJson = await res.json();
+        if (fileJson && fileJson.content) {
+          const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
+          const commonData = JSON.parse(decoded);
+          const profileMap = new Map();
+          if (commonData && Array.isArray(commonData.accounts)) {
+            commonData.accounts.forEach(acc => {
+              if (acc.profiles && Array.isArray(acc.profiles)) {
+                acc.profiles.forEach(email => {
+                  if (!profileMap.has(email)) {
+                    profileMap.set(email, { email, accounts: [] });
                   }
-                }
+                  profileMap.get(email).accounts.push(acc);
+                });
               }
-            } catch (err) {
-              console.error('Failed to fetch profile content:', err);
-            }
+            });
           }
-        }
-        this.loadedProfiles = Array.from(profileMap.values());
-        chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
-        if (this.resolveProfileEmails()) {
-          this.saveAccounts();
-          this.render();
+          this.loadedProfiles = Array.from(profileMap.values());
+          chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
+          if (this.resolveProfileEmails()) {
+            this.saveAccounts();
+            this.render();
+          }
         }
       }
     } catch (e) {
@@ -560,6 +554,23 @@ class AuthenticatorApp {
            } else if (e.target.closest('#restore-first-btn')) {
              this.openImportModal('restore');
              this.fetchFromGithub();
+           } else {
+             const cycleBtn = e.target.closest('.badge-cycle-btn');
+             if (cycleBtn) {
+               e.stopPropagation();
+               const container = cycleBtn.closest('.account-profile-badges');
+               if (container) {
+                 const profiles = container.dataset.profiles.split(', ');
+                 let idx = parseInt(container.dataset.index || '0', 10);
+                 idx = (idx + 1) % profiles.length;
+                 container.dataset.index = idx;
+                 const badge = container.querySelector('.account-profile-badge');
+                 if (badge) {
+                   badge.textContent = profiles[idx];
+                   badge.title = `Imported from: ${profiles[idx]}`;
+                 }
+               }
+             }
            }
          }
        });
@@ -758,51 +769,47 @@ class AuthenticatorApp {
     }
 
     this.showToast('Fetching cloud profiles...');
-    const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles`;
+    const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles/common.json`;
     try {
       const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
       if (res.ok) {
-        const files = await res.json();
-        const profileMap = new Map();
-        for (let f of files) {
-          if (f.name.endsWith('.json')) {
-            try {
-              const dataRes = await fetch(f.url, { headers: { 'Authorization': `token ${this.ghToken}` } });
-              if (dataRes.ok) {
-                const fileJson = await dataRes.json();
-                if (fileJson && fileJson.content) {
-                  const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
-                  const profileData = JSON.parse(decoded);
-                  if (profileData && profileData.email) {
-                    const existing = profileMap.get(profileData.email);
-                    if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
-                      profileMap.set(profileData.email, profileData);
-                    }
+        const fileJson = await res.json();
+        if (fileJson && fileJson.content) {
+          const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
+          const commonData = JSON.parse(decoded);
+          const profileMap = new Map();
+          if (commonData && Array.isArray(commonData.accounts)) {
+            commonData.accounts.forEach(acc => {
+              if (acc.profiles && Array.isArray(acc.profiles)) {
+                acc.profiles.forEach(email => {
+                  if (!profileMap.has(email)) {
+                    profileMap.set(email, { email, accounts: [] });
                   }
-                }
+                  profileMap.get(email).accounts.push(acc);
+                });
               }
-            } catch (err) {
-              console.error('Failed to fetch profile content:', err);
-            }
+            });
           }
-        }
-        this.loadedProfiles = Array.from(profileMap.values());
-        chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
-        if (this.resolveProfileEmails()) {
-          this.saveAccounts();
-          this.render();
-        }
-        if (this.loadedProfiles.length === 0) {
-          this.showToast('No profiles found in cloud vault');
+          this.loadedProfiles = Array.from(profileMap.values());
+          chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
+          if (this.resolveProfileEmails()) {
+            this.saveAccounts();
+            this.render();
+          }
+          if (this.loadedProfiles.length === 0) {
+            this.showToast('No profiles found in cloud vault');
+          } else {
+            this.selectedProfileEmails.clear();
+            this.selectedAccountSecrets.clear();
+            if (this.cloudAccountsSearchInput) this.cloudAccountsSearchInput.value = '';
+            if (this.cloudAccountsClearBtn) this.cloudAccountsClearBtn.classList.add('hidden');
+            this.currentCloudAccounts = [];
+            const previewContainer = document.getElementById('github-accounts-preview');
+            if (previewContainer) previewContainer.classList.add('hidden');
+            this.renderProfileSelection();
+          }
         } else {
-          this.selectedProfileEmails.clear();
-          this.selectedAccountSecrets.clear();
-          if (this.cloudAccountsSearchInput) this.cloudAccountsSearchInput.value = '';
-          if (this.cloudAccountsClearBtn) this.cloudAccountsClearBtn.classList.add('hidden');
-          this.currentCloudAccounts = [];
-          const previewContainer = document.getElementById('github-accounts-preview');
-          if (previewContainer) previewContainer.classList.add('hidden');
-          this.renderProfileSelection();
+          this.showToast('No profiles found in cloud vault');
         }
       } else {
         this.showToast('No profiles found in cloud vault');
@@ -1286,8 +1293,13 @@ class AuthenticatorApp {
             <span class="account-label">${this.escapeHtml(acc.label)}</span>
             <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
             ${acc.profile ? `
-              <div class="account-profile-badges">
-                ${acc.profile.split(', ').map(email => `<span class="account-profile-badge" title="Imported from: ${this.escapeHtml(email)}">${this.escapeHtml(email)}</span>`).join('')}
+              <div class="account-profile-badges" data-profiles="${this.escapeHtml(acc.profile)}" data-index="0">
+                <span class="account-profile-badge" title="Imported from: ${this.escapeHtml(acc.profile.split(', ')[0])}">${this.escapeHtml(acc.profile.split(', ')[0])}</span>
+                ${acc.profile.split(', ').length > 1 ? `
+                  <button class="badge-cycle-btn" title="Cycle through profiles">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+                  </button>
+                ` : ''}
               </div>
             ` : ''}
           </div>
