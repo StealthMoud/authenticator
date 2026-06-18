@@ -542,7 +542,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 12px;
-  transition: transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
+  transition: min-height 0.25s var(--spring-curve), padding-right 0.25s var(--spring-curve), transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -556,6 +556,7 @@ h1 {
   background-color: var(--bg-card-hover);
   transform: translateX(4px);
   box-shadow: var(--shadow-premium), 0 4px 15px -3px var(--primary-glow);
+  padding-right: 124px;
 }
 
 .account-item:active {
@@ -633,6 +634,12 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  transition: white-space var(--transition-fast) ease;
+}
+
+.account-item:hover .account-label {
+  white-space: normal;
+  word-break: break-all;
 }
 
 .account-issuer {
@@ -664,30 +671,29 @@ h1 {
 }
 
 .account-item:hover .account-otp {
-  filter: drop-shadow(0 0 12px var(--primary-glow));
+  opacity: 0;
+  transform: scale(0.9);
+  pointer-events: none;
 }
 
 /* ==================== Account Card Actions ==================== */
 .account-actions {
   position: absolute;
-  top: 0;
-  right: 0;
-  height: 100%;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%) translateX(12px);
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 0 12px;
+  gap: 6px;
   opacity: 0;
-  transform: translateX(12px);
-  transition: all var(--transition-slow) var(--spring-curve);
+  transition: opacity var(--transition-fast) ease, transform var(--transition-fast) var(--spring-curve);
   pointer-events: none;
-  background: linear-gradient(90deg, transparent 0%, var(--bg-deep) 30%);
-  padding-left: 32px;
+  z-index: 10;
 }
 
 .account-item:hover .account-actions {
   opacity: 1;
-  transform: translateX(0);
+  transform: translateY(-50%) translateX(0);
   pointer-events: auto;
 }
 
@@ -1724,6 +1730,13 @@ h1 {
   flex-shrink: 1;
   display: inline-block;
   user-select: none;
+  transition: max-width var(--transition-fast) ease;
+}
+
+.account-item:hover .account-profile-badge {
+  white-space: normal;
+  max-width: none;
+  word-break: break-all;
 }
 
 /* Cycle profile button styling */
