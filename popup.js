@@ -259,13 +259,23 @@ class AuthenticatorApp {
         const profileMap = new Map();
         for (let f of files) {
           if (f.name.endsWith('.json')) {
-            const dataRes = await fetch(f.download_url);
-            const profileData = await dataRes.json();
-            if (profileData && profileData.email) {
-              const existing = profileMap.get(profileData.email);
-              if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
-                profileMap.set(profileData.email, profileData);
+            try {
+              const dataRes = await fetch(f.url, { headers: { 'Authorization': `token ${this.ghToken}` } });
+              if (dataRes.ok) {
+                const fileJson = await dataRes.json();
+                if (fileJson && fileJson.content) {
+                  const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
+                  const profileData = JSON.parse(decoded);
+                  if (profileData && profileData.email) {
+                    const existing = profileMap.get(profileData.email);
+                    if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
+                      profileMap.set(profileData.email, profileData);
+                    }
+                  }
+                }
               }
+            } catch (err) {
+              console.error('Failed to fetch profile content:', err);
             }
           }
         }
@@ -756,13 +766,23 @@ class AuthenticatorApp {
         const profileMap = new Map();
         for (let f of files) {
           if (f.name.endsWith('.json')) {
-            const dataRes = await fetch(f.download_url);
-            const profileData = await dataRes.json();
-            if (profileData && profileData.email) {
-              const existing = profileMap.get(profileData.email);
-              if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
-                profileMap.set(profileData.email, profileData);
+            try {
+              const dataRes = await fetch(f.url, { headers: { 'Authorization': `token ${this.ghToken}` } });
+              if (dataRes.ok) {
+                const fileJson = await dataRes.json();
+                if (fileJson && fileJson.content) {
+                  const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
+                  const profileData = JSON.parse(decoded);
+                  if (profileData && profileData.email) {
+                    const existing = profileMap.get(profileData.email);
+                    if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
+                      profileMap.set(profileData.email, profileData);
+                    }
+                  }
+                }
               }
+            } catch (err) {
+              console.error('Failed to fetch profile content:', err);
             }
           }
         }
@@ -1265,7 +1285,11 @@ class AuthenticatorApp {
           <div class="account-info">
             <span class="account-label">${this.escapeHtml(acc.label)}</span>
             <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
-            ${acc.profile ? `<span class="account-profile-badge" title="Imported from: ${this.escapeHtml(acc.profile)}">${this.escapeHtml(acc.profile)}</span>` : ''}
+            ${acc.profile ? `
+              <div class="account-profile-badges">
+                ${acc.profile.split(', ').map(email => `<span class="account-profile-badge" title="Imported from: ${this.escapeHtml(email)}">${this.escapeHtml(email)}</span>`).join('')}
+              </div>
+            ` : ''}
           </div>
           <div class="account-otp">--- ---</div>
           <div class="account-actions">

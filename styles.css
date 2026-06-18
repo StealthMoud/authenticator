@@ -1698,6 +1698,14 @@ h1 {
   text-overflow: ellipsis;
 }
 
+.account-profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+  width: 100%;
+}
+
 /* Profile source identifier badge */
 .account-profile-badge {
   font-size: 0.55rem;
@@ -1712,12 +1720,10 @@ h1 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 100%;
+  max-width: 140px;
   flex-shrink: 0;
   display: inline-block;
   user-select: none;
-  margin-top: 2px;
-  align-self: flex-start;
 }
 
 
