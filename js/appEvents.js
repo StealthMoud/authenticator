@@ -61,9 +61,15 @@ AuthenticatorApp.prototype.setupEventListeners = function() {
     this.fixSyncBtn.addEventListener('click', () => this.openSettings());
   }
 
-  // status badge opens settings
+  // status badge action: sync if connected, else open settings
   if (this.statusBadge) {
-    this.statusBadge.addEventListener('click', () => this.openSettings());
+    this.statusBadge.addEventListener('click', () => {
+      if (this.ghToken && this.ghRepo) {
+        this.syncToGithub();
+      } else {
+        this.openSettings();
+      }
+    });
   }
 
   // settings panel

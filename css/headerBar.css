@@ -229,3 +229,44 @@ h1 {
   filter: brightness(1.2);
   transform: scale(1.05);
 }
+
+/* Account Counter Badge */
+.account-counter {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--primary-light);
+  background: hsla(250, 85%, 65%, 0.15);
+  border: 1px solid hsla(250, 85%, 65%, 0.3);
+  border-radius: var(--radius-full);
+  padding: 1.5px 6px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px var(--primary-glow);
+  height: 16px;
+  min-width: 20px;
+  font-family: var(--font);
+  transition: all var(--transition-fast) var(--spring-curve);
+}
+
+@keyframes counterBump {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); background: hsla(250, 85%, 65%, 0.3); border-color: var(--primary); }
+  100% { transform: scale(1); }
+}
+
+.account-counter.bump {
+  animation: counterBump 0.3s var(--spring-curve);
+}
+
+/* Status Badge Unsynced Alert */
+.status-unsynced .status-dot {
+  background: var(--warning);
+  box-shadow: 0 0 8px var(--warning);
+  animation: status-pulse 1.5s infinite ease-in-out;
+}
+
+.status-unsynced #status-text {
+  color: var(--warning);
+}

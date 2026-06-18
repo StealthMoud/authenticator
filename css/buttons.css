@@ -139,3 +139,26 @@
 .btn-action-outline:active {
   transform: scale(0.97);
 }
+
+/* Sync Warning/Alert State */
+.btn-action.sync-alert {
+  border-color: var(--warning);
+  color: var(--warning);
+  background: hsla(40, 95%, 50%, 0.05);
+  animation: syncAlertPulse 2s infinite ease-in-out;
+}
+
+.btn-action.sync-alert svg {
+  color: var(--warning);
+}
+
+@keyframes syncAlertPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 12px var(--warning-glow);
+    border-color: var(--warning);
+  }
+}

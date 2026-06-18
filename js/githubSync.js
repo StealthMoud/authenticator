@@ -24,7 +24,7 @@ AuthenticatorApp.prototype.updateConnectionStatus = function() {
   const hasConfig = this.ghToken && this.ghRepo;
 
   // remove old state classes
-  this.statusBadge.classList.remove('status-connected', 'status-disconnected', 'status-error');
+  this.statusBadge.classList.remove('status-connected', 'status-disconnected', 'status-error', 'status-unsynced');
 
   if (!hasConfig) {
     this.statusBadge.classList.add('status-disconnected');
@@ -38,11 +38,21 @@ AuthenticatorApp.prototype.updateConnectionStatus = function() {
     if (this.syncErrorText) {
       this.syncErrorText.textContent = this.syncErrorMessage || 'Cloud sync failed';
     }
+  } else if (this.localUnsynced) {
+    this.statusBadge.classList.add('status-unsynced');
+    this.statusText.textContent = 'Sync Needed';
+    this.syncErrorBanner.classList.add('hidden');
   } else {
     this.statusBadge.classList.add('status-connected');
     const shortEmail = this.currentEmail.split('@')[0] || 'connected';
     this.statusText.textContent = shortEmail;
     this.syncErrorBanner.classList.add('hidden');
+  }
+
+  // toggle sync-alert class on sync button
+  const syncBtn = document.getElementById('github-sync-btn');
+  if (syncBtn) {
+    syncBtn.classList.toggle('sync-alert', !!(hasConfig && this.localUnsynced));
   }
 
   // update settings panel views
@@ -140,9 +150,10 @@ AuthenticatorApp.prototype.saveGithubConfig = async function() {
 AuthenticatorApp.prototype.disconnectVault = async function() {
   this.ghToken = '';
   this.ghRepo = '';
-  await chrome.storage.local.remove(['ghToken', 'ghRepo', 'syncError', 'syncErrorMessage']);
+  await chrome.storage.local.remove(['ghToken', 'ghRepo', 'syncError', 'syncErrorMessage', 'localUnsynced']);
   this.syncError = false;
   this.syncErrorMessage = '';
+  this.localUnsynced = false;
   if (this.ghTokenInput) this.ghTokenInput.value = '';
   if (this.ghRepoInput) this.ghRepoInput.value = '';
   this.updateConnectionStatus();
@@ -164,7 +175,7 @@ AuthenticatorApp.prototype.syncToGithub = async function(silent = false) {
       if (res.mergedAccounts && Array.isArray(res.mergedAccounts)) {
         this.accounts = res.mergedAccounts;
         this.filteredAccounts = [...this.accounts];
-        this.saveAccounts();
+        this.saveAccounts(true);
         this.render();
       }
       if (!silent) {
@@ -174,6 +185,7 @@ AuthenticatorApp.prototype.syncToGithub = async function(silent = false) {
         this.flashBadge(`${res.pulled} new`);
       }
       this.setSyncError(false, '');
+      this.setLocalUnsynced(false);
       this.silentFetchAndResolveProfiles();
     } else {
       const reason = res ? res.error : 'Connection timeout';
@@ -200,4 +212,10 @@ AuthenticatorApp.prototype.flashBadge = function(text) {
     this.statusText.textContent = original;
     this.statusBadge.classList.remove('badge-flash');
   }, 3000);
+};
+
+AuthenticatorApp.prototype.setLocalUnsynced = function(val) {
+  this.localUnsynced = val;
+  chrome.storage.local.set({ localUnsynced: val });
+  this.updateConnectionStatus();
 };

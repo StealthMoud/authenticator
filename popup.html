@@ -13,7 +13,10 @@
       <div class="header-main">
         <img src="icons/icon48.png" alt="Logo" class="logo">
         <div>
-          <h1>Authenticator</h1>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1>Authenticator</h1>
+            <span id="account-counter" class="account-counter" title="Total Accounts">0</span>
+          </div>
           <button id="status-badge" class="status-badge status-disconnected" title="Open Settings">
             <span class="status-dot"></span>
             <span id="status-text">Not Configured</span>

@@ -54,7 +54,7 @@ AuthenticatorApp.prototype.silentFetchAndResolveProfiles = async function() {
         this.loadedProfiles = Array.from(profileMap.values());
         chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
         if (this.resolveProfileEmails()) {
-          this.saveAccounts();
+          this.saveAccounts(true);
           this.render();
         }
       }
@@ -98,7 +98,7 @@ AuthenticatorApp.prototype.fetchFromGithub = async function() {
         this.loadedProfiles = Array.from(profileMap.values());
         chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
         if (this.resolveProfileEmails()) {
-          this.saveAccounts();
+          this.saveAccounts(true);
           this.render();
         }
         if (this.loadedProfiles.length === 0) {

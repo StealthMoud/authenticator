@@ -17,6 +17,7 @@ class AuthenticatorApp {
 
     // cache dom refs
     this.accountList = document.getElementById('account-list');
+    this.accountCounter = document.getElementById('account-counter');
     this.searchInput = document.getElementById('search-input');
     this.searchClearBtn = document.getElementById('search-clear-btn');
     this.importBtn = document.getElementById('import-btn');
@@ -110,11 +111,12 @@ class AuthenticatorApp {
 
   async loadAccounts() {
     return new Promise((resolve) => {
-      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError', 'syncErrorMessage', 'loadedProfiles'], (result) => {
+      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError', 'syncErrorMessage', 'loadedProfiles', 'localUnsynced'], (result) => {
         this.accounts = result[this.storageKey] || [];
         this.privacyMode = result.privacyMode || false;
         this.sortAscending = (result.sortAscending !== undefined) ? result.sortAscending : true;
         this.loadedProfiles = result.loadedProfiles || [];
+        this.localUnsynced = result.localUnsynced || false;
         
         // Auto-fix any missing/Unknown issuers from the label if possible
         let modified = false;
@@ -134,7 +136,7 @@ class AuthenticatorApp {
         }
 
         if (modified) {
-          this.saveAccounts();
+          this.saveAccounts(true);
         }
 
         this.filteredAccounts = [...this.accounts];
@@ -146,7 +148,10 @@ class AuthenticatorApp {
     });
   }
 
-  async saveAccounts() {
+  async saveAccounts(isSync = false) {
+    if (!isSync && this.ghToken && this.ghRepo) {
+      this.setLocalUnsynced(true);
+    }
     return new Promise((resolve) => {
       chrome.storage.local.set({ [this.storageKey]: this.accounts }, () => resolve());
     });

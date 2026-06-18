@@ -4,6 +4,18 @@ AuthenticatorApp.prototype.render = function() {
   if (!this.accountList) return;
   this.accountList.classList.toggle('privacy-enabled', this.privacyMode);
 
+  // Update account counter with scale micro-animation
+  if (this.accountCounter) {
+    const oldCount = parseInt(this.accountCounter.textContent || '0', 10);
+    const newCount = this.accounts.length;
+    this.accountCounter.textContent = newCount;
+    if (oldCount !== newCount) {
+      this.accountCounter.classList.remove('bump');
+      void this.accountCounter.offsetWidth; // force reflow
+      this.accountCounter.classList.add('bump');
+    }
+  }
+
   // toggle privacy icon
   const eyeOpen = this.privacyBtn?.querySelector('.eye-open');
   const eyeClosed = this.privacyBtn?.querySelector('.eye-closed');
@@ -157,7 +169,7 @@ AuthenticatorApp.prototype.render = function() {
         navigator.clipboard.writeText(totp.generate());
         this.showToast('Copied to clipboard');
         acc.lastUsed = Date.now();
-        this.saveAccounts();
+        this.saveAccounts(true);
 
         el.classList.remove('copied-pulse');
         void el.offsetWidth; // trigger reflow to restart keyframe animation
@@ -172,7 +184,7 @@ AuthenticatorApp.prototype.render = function() {
         navigator.clipboard.writeText(totp.generate());
         this.showToast('Copied to clipboard');
         acc.lastUsed = Date.now();
-        this.saveAccounts();
+        this.saveAccounts(true);
 
         el.classList.remove('copied-pulse');
         void el.offsetWidth; // trigger reflow to restart keyframe animation
