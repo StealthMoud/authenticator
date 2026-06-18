@@ -557,14 +557,20 @@ class AuthenticatorApp {
       const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
       if (res.ok) {
         const files = await res.json();
-        this.loadedProfiles = [];
+        const profileMap = new Map();
         for (let f of files) {
           if (f.name.endsWith('.json')) {
             const dataRes = await fetch(f.download_url);
             const profileData = await dataRes.json();
-            this.loadedProfiles.push(profileData);
+            if (profileData && profileData.email) {
+              const existing = profileMap.get(profileData.email);
+              if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
+                profileMap.set(profileData.email, profileData);
+              }
+            }
           }
         }
+        this.loadedProfiles = Array.from(profileMap.values());
         if (this.loadedProfiles.length === 0) {
           this.showToast('No profiles found in cloud vault');
         } else {
