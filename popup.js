@@ -18,6 +18,7 @@ class AuthenticatorApp {
     // cache dom refs
     this.accountList = document.getElementById('account-list');
     this.searchInput = document.getElementById('search-input');
+    this.searchClearBtn = document.getElementById('search-clear-btn');
     this.importBtn = document.getElementById('import-btn');
     this.importModal = document.getElementById('import-modal');
     this.dropZone = document.getElementById('drop-zone');
@@ -75,6 +76,9 @@ class AuthenticatorApp {
     this.importModalSubtitle = document.getElementById('import-subtitle');
     this.importDivider = document.getElementById('import-divider');
     this.githubRestoreSection = document.getElementById('github-restore-section');
+    this.cloudAccountsSearchInput = document.getElementById('cloud-accounts-search');
+    this.cloudAccountsClearBtn = document.getElementById('cloud-accounts-clear-btn');
+    this.currentCloudAccounts = [];
 
     this.init();
   }
@@ -264,7 +268,38 @@ class AuthenticatorApp {
   // -- Event Listeners --
 
   setupEventListeners() {
-    if (this.searchInput) this.searchInput.addEventListener('input', () => this.applyFiltersAndSort());
+    if (this.searchInput) {
+      this.searchInput.addEventListener('input', () => {
+        if (this.searchClearBtn) {
+          this.searchClearBtn.classList.toggle('hidden', !this.searchInput.value);
+        }
+        this.applyFiltersAndSort();
+      });
+    }
+    if (this.searchClearBtn) {
+      this.searchClearBtn.addEventListener('click', () => {
+        this.searchInput.value = '';
+        this.searchClearBtn.classList.add('hidden');
+        this.searchInput.focus();
+        this.applyFiltersAndSort();
+      });
+    }
+    if (this.cloudAccountsSearchInput) {
+      this.cloudAccountsSearchInput.addEventListener('input', () => {
+        if (this.cloudAccountsClearBtn) {
+          this.cloudAccountsClearBtn.classList.toggle('hidden', !this.cloudAccountsSearchInput.value);
+        }
+        this.filterAndRenderCloudAccounts();
+      });
+    }
+    if (this.cloudAccountsClearBtn) {
+      this.cloudAccountsClearBtn.addEventListener('click', () => {
+        this.cloudAccountsSearchInput.value = '';
+        this.cloudAccountsClearBtn.classList.add('hidden');
+        this.cloudAccountsSearchInput.focus();
+        this.filterAndRenderCloudAccounts();
+      });
+    }
     if (this.privacyBtn) this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
 
     if (this.exportVaultBtn) {
@@ -593,6 +628,9 @@ class AuthenticatorApp {
         } else {
           this.selectedProfileEmails.clear();
           this.selectedAccountSecrets.clear();
+          if (this.cloudAccountsSearchInput) this.cloudAccountsSearchInput.value = '';
+          if (this.cloudAccountsClearBtn) this.cloudAccountsClearBtn.classList.add('hidden');
+          this.currentCloudAccounts = [];
           const previewContainer = document.getElementById('github-accounts-preview');
           if (previewContainer) previewContainer.classList.add('hidden');
           this.renderProfileSelection();
@@ -652,6 +690,9 @@ class AuthenticatorApp {
       }
     });
 
+    this.currentCloudAccounts = combinedAccounts;
+
+    // By default, select all combined accounts
     this.selectedAccountSecrets.clear();
     combinedAccounts.forEach(acc => this.selectedAccountSecrets.add(acc.secret));
 
@@ -660,8 +701,18 @@ class AuthenticatorApp {
       if (previewContainer) previewContainer.classList.add('hidden');
     } else {
       if (previewContainer) previewContainer.classList.remove('hidden');
-      this.renderAccountPreview(combinedAccounts);
+      this.filterAndRenderCloudAccounts();
     }
+  }
+
+  filterAndRenderCloudAccounts() {
+    const term = this.cloudAccountsSearchInput ? this.cloudAccountsSearchInput.value.toLowerCase().trim() : '';
+    const filtered = this.currentCloudAccounts.filter(acc => {
+      const issuer = (acc.issuer || '').toLowerCase();
+      const label = (acc.label || '').toLowerCase();
+      return issuer.includes(term) || label.includes(term);
+    });
+    this.renderAccountPreview(filtered);
   }
 
   renderAccountPreview(accounts) {
@@ -672,32 +723,54 @@ class AuthenticatorApp {
     // Update heading to show selection count
     const previewTitle = document.getElementById('preview-title');
     if (previewTitle) {
-      previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${accounts.length}):`;
+      previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${this.currentCloudAccounts.length}):`;
+    }
+
+    if (accounts.length === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.style.textAlign = 'center';
+      emptyDiv.style.padding = '20px';
+      emptyDiv.style.color = 'var(--text-dim)';
+      emptyDiv.style.fontSize = '0.75rem';
+      emptyDiv.innerText = 'No matching cloud accounts';
+      container.appendChild(emptyDiv);
+      return;
     }
 
     accounts.forEach(acc => {
-      const chip = document.createElement('div');
-      chip.className = 'sort-chip';
-      chip.style.fontSize = '0.65rem';
-      chip.innerText = acc.issuer;
+      const itemEl = document.createElement('div');
+      itemEl.className = 'cloud-account-item';
       
-      if (this.selectedAccountSecrets.has(acc.secret)) {
-        chip.classList.add('active');
+      const isActive = this.selectedAccountSecrets.has(acc.secret);
+      if (isActive) {
+        itemEl.classList.add('active');
       }
-      
-      chip.onclick = () => {
+
+      itemEl.innerHTML = `
+        <div class="cloud-account-checkbox">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        ${this.getIssuerIcon(acc.issuer)}
+        <div class="cloud-account-details">
+          <span class="cloud-account-name">${this.escapeHtml(acc.issuer || 'Unknown')}</span>
+          <span class="cloud-account-label">${this.escapeHtml(acc.label || '')}</span>
+        </div>
+      `;
+
+      itemEl.onclick = () => {
         if (this.selectedAccountSecrets.has(acc.secret)) {
           this.selectedAccountSecrets.delete(acc.secret);
-          chip.classList.remove('active');
+          itemEl.classList.remove('active');
         } else {
           this.selectedAccountSecrets.add(acc.secret);
-          chip.classList.add('active');
+          itemEl.classList.add('active');
         }
         if (previewTitle) {
-          previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${accounts.length}):`;
+          previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${this.currentCloudAccounts.length}):`;
         }
       };
-      container.appendChild(chip);
+      
+      container.appendChild(itemEl);
     });
   }
 
@@ -879,13 +952,17 @@ class AuthenticatorApp {
 
   applyFiltersAndSort() {
     const term = this.searchInput.value.toLowerCase().trim();
-    let result = this.accounts.filter(a => a.issuer.toLowerCase().includes(term) || a.label.toLowerCase().includes(term));
+    let result = this.accounts.filter(a => {
+      const issuer = (a.issuer || '').toLowerCase();
+      const label = (a.label || '').toLowerCase();
+      return issuer.includes(term) || label.includes(term);
+    });
     const dir = this.sortAscending ? 1 : -1;
 
     if (this.currentSort === 'name') {
       result.sort((a, b) => {
-        const valA = (a.issuer + a.label).toLowerCase();
-        const valB = (b.issuer + b.label).toLowerCase();
+        const valA = ((a.issuer || '') + (a.label || '')).toLowerCase();
+        const valB = ((b.issuer || '') + (b.label || '')).toLowerCase();
         return valA.localeCompare(valB) * dir;
       });
     } else if (this.currentSort === 'newest') {
@@ -1221,7 +1298,7 @@ class AuthenticatorApp {
   getIssuerIcon(issuer) {
     const clean = (issuer || '').toLowerCase().trim();
     if (clean.includes('google')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.24 10.285V13.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l2.427-2.334C17.955 2.192 15.34 1 12.24 1 6.033 1 1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.98 0-.74-.08-1.3-.18-1.85H12.24z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/></svg>`;
     }
     if (clean.includes('github')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>`;
@@ -1254,7 +1331,7 @@ class AuthenticatorApp {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.38 0 0 5.38 0 12s5.38 12 12 12c6.45 0 11.72-5.11 11.98-11.5L18.4 9.9c-.31.84-1.12 1.44-2.07 1.44-.15 0-.3-.02-.45-.05l-3.38 3.38c.03.15.05.3.05.45 0 1.2-.98 2.18-2.18 2.18-1.2 0-2.18-.98-2.18-2.18 0-1.09.81-1.99 1.86-2.15l2.45-3.63c0-.05-.01-.1-.01-.15 0-1.8 1.46-3.26 3.26-3.26.96 0 1.83.42 2.43 1.09l5.24-2.2C22.65 3.06 17.78 0 12 0zm4.33 8.13c-.62 0-1.13.51-1.13 1.13s.51 1.13 1.13 1.13 1.13-.51 1.13-1.13-.51-1.13-1.13-1.13z"/></svg>`;
     }
     if (clean.includes('epic')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v7c0 5.25 4.25 9.5 10 11 5.75-1.5 10-5.75 10-11V7L12 2z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 15 10-15-10-5z"/></svg>`;
     }
     if (clean.includes('reddit')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M12 8c1.5 0 3 1.5 3 3v2c0 1.5-1.5 3-3 3s-3-1.5-3-3v-2c0-1.5 1.5-3 3-3z"/></svg>`;
@@ -1299,7 +1376,7 @@ class AuthenticatorApp {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" x2="21" y1="6" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`;
     }
     if (clean.includes('apple')) {
-      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-1.09 3.73-3.38 2.83zm-3.93-15.1c.67-.81 1.12-1.95.99-3.09-1 .04-2.2.67-2.92 1.49-.62.72-1.16 1.88-1.02 3 .99.08 2.13-.59 2.95-1.4z"/></svg>`;
+      return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>`;
     }
     if (clean.includes('coinbase')) {
       return `<svg class="brand-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/><path d="M12 14v4"/></svg>`;

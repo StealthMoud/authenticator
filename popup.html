@@ -46,6 +46,9 @@
       <div class="search-wrapper">
         <input type="text" id="search-input" placeholder="Search accounts...">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <button id="search-clear-btn" class="search-clear-btn hidden" title="Clear Search">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
       </div>
       <div class="sort-container">
         <div class="sort-chips">
@@ -122,8 +125,17 @@
             </div>
             
             <div id="github-accounts-preview" class="hidden" style="margin-top:15px; border-top: 1px solid var(--border-glass); padding-top: 10px;">
-              <h4 id="preview-title" style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px;">Accounts in profile:</h4>
-              <div id="github-accounts-list" style="max-height:100px; overflow-y:auto; display: flex; flex-wrap: wrap; gap: 4px;"></div>
+              <h4 id="preview-title" style="font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px;">Select accounts to import:</h4>
+              
+              <!-- Search cloud accounts -->
+              <div class="search-wrapper" style="margin-bottom: 10px;">
+                <input type="text" id="cloud-accounts-search" placeholder="Search cloud accounts..." style="font-size: 0.72rem; padding: 7px 30px 7px 12px; background: var(--bg-card); border: 1px solid var(--border-glass); border-radius: var(--radius-md); color: var(--text-main); outline: none; width: 100%;">
+                <button id="cloud-accounts-clear-btn" class="search-clear-btn hidden" title="Clear Search" style="right: 8px; padding: 2px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+                </button>
+              </div>
+
+              <div id="github-accounts-list" class="cloud-accounts-container"></div>
             </div>
           </div>
         </div>
