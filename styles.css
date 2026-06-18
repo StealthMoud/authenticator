@@ -1737,6 +1737,8 @@ h1 {
   white-space: normal;
   max-width: none;
   word-break: break-all;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Cycle profile button styling */
