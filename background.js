@@ -54,6 +54,7 @@ function mergeGlobalVault(local, remote, userEmail) {
         } else {
           // existing account, merge details and profiles
           const merged = { ...existing };
+          merged.id = existing.id || acc.id || Date.now() + Math.random();
           merged.lastUsed = Math.max(existing.lastUsed || 0, acc.lastUsed || 0);
           merged.label = acc.label || existing.label;
           merged.issuer = acc.issuer || existing.issuer;
