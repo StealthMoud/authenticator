@@ -170,6 +170,7 @@ class AuthenticatorApp {
     // Silently trigger pull-and-merge sync on startup if configured
     if (this.ghToken && this.ghRepo) {
       this.syncToGithub(true);
+      this.silentFetchAndResolveProfiles();
     }
   }
 
@@ -223,9 +224,13 @@ class AuthenticatorApp {
     if (!this.loadedProfiles || this.loadedProfiles.length === 0) return false;
     let modified = false;
     this.accounts.forEach(acc => {
+      if (!acc.secret) return;
+      const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
       // Find all profiles that contain this account secret
       const matchingProfiles = this.loadedProfiles
-        .filter(p => p.accounts && p.accounts.some(remoteAcc => remoteAcc.secret === acc.secret))
+        .filter(p => p.accounts && p.accounts.some(remoteAcc => 
+          remoteAcc.secret && remoteAcc.secret.replace(/\s/g, '').toUpperCase() === cleanSecret
+        ))
         .map(p => p.email);
       
       if (matchingProfiles.length > 0) {
@@ -234,9 +239,46 @@ class AuthenticatorApp {
           acc.profile = profileStr;
           modified = true;
         }
+      } else {
+        if (acc.profile) {
+          acc.profile = '';
+          modified = true;
+        }
       }
     });
     return modified;
+  }
+
+  async silentFetchAndResolveProfiles() {
+    if (!this.ghToken || !this.ghRepo) return;
+    const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles`;
+    try {
+      const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
+      if (res.ok) {
+        const files = await res.json();
+        const profileMap = new Map();
+        for (let f of files) {
+          if (f.name.endsWith('.json')) {
+            const dataRes = await fetch(f.download_url);
+            const profileData = await dataRes.json();
+            if (profileData && profileData.email) {
+              const existing = profileMap.get(profileData.email);
+              if (!existing || new Date(profileData.updatedAt || 0) > new Date(existing.updatedAt || 0)) {
+                profileMap.set(profileData.email, profileData);
+              }
+            }
+          }
+        }
+        this.loadedProfiles = Array.from(profileMap.values());
+        chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
+        if (this.resolveProfileEmails()) {
+          this.saveAccounts();
+          this.render();
+        }
+      }
+    } catch (e) {
+      console.error('Silent profile fetch failed:', e);
+    }
   }
 
   async loadGithubConfig() {
@@ -668,6 +710,7 @@ class AuthenticatorApp {
           this.flashBadge(`${res.pulled} new`);
         }
         this.setSyncError(false, '');
+        this.silentFetchAndResolveProfiles();
       } else {
         const reason = res ? res.error : 'Connection timeout';
         if (!silent) this.showToast('Sync failed: ' + reason);
