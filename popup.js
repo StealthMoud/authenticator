@@ -244,7 +244,16 @@ class AuthenticatorApp {
       });
     }
 
-    if (this.githubSyncBtn) this.githubSyncBtn.addEventListener('click', () => this.syncToGithub());
+    if (this.githubSyncBtn) {
+      this.githubSyncBtn.addEventListener('click', () => {
+        if (!this.ghToken || !this.ghRepo) {
+          this.openSettings();
+        } else {
+          this.syncToGithub();
+          if (this.importModal) this.importModal.classList.remove('hidden');
+        }
+      });
+    }
     if (this.saveGhConfigBtn) this.saveGhConfigBtn.addEventListener('click', () => this.saveGithubConfig());
     if (this.fetchGithubBtn) this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
     if (this.importSelectedGhBtn) this.importSelectedGhBtn.addEventListener('click', () => this.importFromSelectedProfile());
