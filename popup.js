@@ -39,7 +39,7 @@ if (typeof chrome === 'undefined' || !chrome.storage) {
             { id: '27', issuer: 'Apple', label: 'icloud_storage', secret: 'JBSWY3DPEHPK3PXP' },
             { id: '28', issuer: 'Coinbase', label: 'crypto_wallet', secret: 'JBSWY3DPEHPK3PXP' },
             { id: '29', issuer: 'Binance', label: 'crypto_exchange', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '30', issuer: 'Voorivex', label: 'voorivex.academy', secret: 'JBSWY3DPEHPK3PXP', profile: 'stealthmoud@gmail.com' },
+            { id: '30', issuer: 'Voorivex', label: 'voorivex.academy', secret: 'JBSWY3DPEHPK3PXP', profile: 'stealthmoud@gmail.com, mahmoodmohsiny1378116@gmail.com, seyedmahmoudmohseni@gmail.com' },
             { id: '31', issuer: 'HackerOne', label: 'h1_security', secret: 'JBSWY3DPEHPK3PXP', profile: 'seyedmahmoudmohseni@gmail.com' },
             { id: '32', issuer: 'Bugcrowd', label: 'bugcrowd_research', secret: 'JBSWY3DPEHPK3PXP', profile: 'stealthmoud@gmail.com' },
             { id: '33', issuer: 'Intigriti', label: 'intigriti_hacker', secret: 'JBSWY3DPEHPK3PXP', profile: 'mahmoodmohsiny1378116@gmail.com' },
@@ -1284,6 +1284,10 @@ class AuthenticatorApp {
         });
       } else {
         // normal display mode
+        const profileCount = acc.profile ? acc.profile.split(', ').length : 0;
+        const activeIdx = (acc.selectedProfileIndex !== undefined && acc.selectedProfileIndex < profileCount) ? acc.selectedProfileIndex : 0;
+        const currentEmail = profileCount > 0 ? acc.profile.split(', ')[activeIdx] : '';
+
         el.className = 'account-item';
         el.innerHTML = `
           <div class="account-icon-wrapper">
@@ -1293,9 +1297,9 @@ class AuthenticatorApp {
             <span class="account-label">${this.escapeHtml(acc.label)}</span>
             <span class="account-issuer">${this.escapeHtml(acc.issuer)}</span>
             ${acc.profile ? `
-              <div class="account-profile-badges" data-profiles="${this.escapeHtml(acc.profile)}" data-index="0">
-                <span class="account-profile-badge" title="Imported from: ${this.escapeHtml(acc.profile.split(', ')[0])}">${this.escapeHtml(acc.profile.split(', ')[0])}</span>
-                ${acc.profile.split(', ').length > 1 ? `
+              <div class="account-profile-badges" data-profiles="${this.escapeHtml(acc.profile)}" data-index="${activeIdx}">
+                <span class="account-profile-badge" title="Imported from: ${this.escapeHtml(currentEmail)}">${this.escapeHtml(currentEmail)}</span>
+                ${profileCount > 1 ? `
                   <button class="badge-cycle-btn" title="Cycle through profiles">
                     <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                   </button>
@@ -1358,6 +1362,28 @@ class AuthenticatorApp {
           e.stopPropagation();
           this.deleteAccount(acc.id);
         });
+
+        // action: cycle profile
+        const cycleBtn = el.querySelector('.badge-cycle-btn');
+        if (cycleBtn) {
+          cycleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const container = cycleBtn.closest('.account-profile-badges');
+            if (container) {
+              const profiles = container.dataset.profiles.split(', ');
+              let idx = parseInt(container.dataset.index || '0', 10);
+              idx = (idx + 1) % profiles.length;
+              container.dataset.index = idx;
+              acc.selectedProfileIndex = idx;
+              this.saveAccounts();
+              const badge = container.querySelector('.account-profile-badge');
+              if (badge) {
+                badge.textContent = profiles[idx];
+                badge.title = `Imported from: ${profiles[idx]}`;
+              }
+            }
+          });
+        }
       }
 
       this.accountList.appendChild(el);

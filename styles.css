@@ -1726,4 +1726,38 @@ h1 {
   user-select: none;
 }
 
+/* Cycle profile button styling */
+.badge-cycle-btn {
+  background: hsla(0, 0%, 100%, 0.04);
+  border: 1px solid var(--border-glass);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast) var(--spring-curve);
+  padding: 0;
+  flex-shrink: 0;
+  outline: none;
+}
 
+.badge-cycle-btn:hover {
+  background: hsla(250, 85%, 65%, 0.15);
+  border-color: var(--primary);
+  color: var(--primary-light);
+  transform: translateY(-0.5px) scale(1.05);
+}
+
+.badge-cycle-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+.badge-cycle-btn svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 3px;
+  display: block;
+}
