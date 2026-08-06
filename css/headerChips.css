@@ -48,8 +48,14 @@
 }
 
 #sort-order-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
+  padding: 5px 9px;
+  gap: 4px;
   flex-shrink: 0;
+  white-space: nowrap;
+}
+
+#sort-order-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
