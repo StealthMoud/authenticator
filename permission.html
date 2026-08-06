@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Authenticator - Camera Permission</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg-main, #0d0f17);
+      color: var(--text-main, #f8fafc);
+      font-family: var(--font, 'Outfit', sans-serif);
+    }
+    .permission-card {
+      background: var(--bg-card, rgba(23, 26, 38, 0.95));
+      border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.1));
+      border-radius: var(--radius-xl, 16px);
+      padding: 36px 32px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+    }
+    .permission-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      border-radius: 50%;
+      background: hsla(250, 85%, 65%, 0.15);
+      border: 1px solid var(--border-bright, rgba(139, 92, 246, 0.3));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-light, #a78bfa);
+    }
+    h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 10px;
+    }
+    p {
+      font-size: 0.85rem;
+      color: var(--text-dim, #94a3b8);
+      margin: 0 0 24px;
+      line-height: 1.5;
+    }
+    .btn-grant {
+      background: linear-gradient(135deg, var(--primary, #7c3aed), var(--accent, #a855f7));
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: var(--radius-md, 10px);
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 16px var(--primary-glow, rgba(124, 58, 237, 0.4));
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-grant:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px var(--primary-glow, rgba(124, 58, 237, 0.6));
+    }
+    .status-msg {
+      margin-top: 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      min-height: 20px;
+    }
+    .status-success { color: var(--success, #10b981); }
+    .status-error { color: var(--danger, #ef4444); }
+  </style>
+</head>
+<body>
+  <div class="permission-card">
+    <div class="permission-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+    </div>
+    <h2>Camera Permission Required</h2>
+    <p>Click below to allow <b>Authenticator</b> to use your camera to scan 2FA QR codes.</p>
+    <button id="request-btn" class="btn-grant">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Allow Camera Access
+    </button>
+    <div id="status" class="status-msg"></div>
+  </div>
+  <script src="js/permission.js"></script>
+</body>
+</html>
