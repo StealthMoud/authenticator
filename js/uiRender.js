@@ -30,18 +30,21 @@ AuthenticatorApp.prototype.render = function() {
       if (isCloudConnected) {
         this.accountList.innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon" style="color: var(--accent); opacity: 0.8;">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+            <div class="empty-icon-wrapper">
+              <div class="empty-icon-glow"></div>
+              <div class="empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+              </div>
             </div>
             <p class="empty-title">Cloud Vault Linked</p>
             <p class="empty-subtitle">No accounts on this device yet. Start fresh or restore your cloud data.</p>
             <div class="empty-actions">
-              <button id="add-first-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              <button id="add-first-btn" class="btn-premium">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
                 Add Account
               </button>
               <button id="restore-first-btn" class="btn-action-outline">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                 Restore Cloud Data
               </button>
             </div>
@@ -49,18 +52,28 @@ AuthenticatorApp.prototype.render = function() {
       } else {
         this.accountList.innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+            <div class="empty-icon-wrapper">
+              <div class="empty-icon-glow"></div>
+              <div class="empty-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              </div>
             </div>
             <p class="empty-title">No accounts yet</p>
-            <button id="add-first-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
-              Add Your First Account
-            </button>
+            <p class="empty-subtitle">Add your 2FA accounts by scanning a QR code or image file.</p>
+            <div class="empty-actions">
+              <button id="add-first-btn" class="btn-premium">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                Add Your First Account
+              </button>
+            </div>
           </div>`;
       }
     } else {
-      this.accountList.innerHTML = '<div class="empty-state"><p>No matching accounts</p></div>';
+      this.accountList.innerHTML = `
+        <div class="empty-state">
+          <p class="empty-title">No matching accounts</p>
+          <p class="empty-subtitle">Try searching with a different term or clear your filters.</p>
+        </div>`;
     }
     return;
   }
