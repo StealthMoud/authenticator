@@ -293,13 +293,36 @@ class AuthenticatorApp {
   updateOrderIcon() {
     const asc = document.getElementById('order-asc');
     const desc = document.getElementById('order-desc');
+    const label = document.getElementById('sort-order-text');
+    const btn = this.sortOrderBtn;
     if (!asc || !desc) return;
+
+    const isName = this.currentSort === 'name';
+    const isNewest = this.currentSort === 'newest';
+    const isRecent = this.currentSort === 'recent';
+
     if (this.sortAscending) {
       asc.classList.remove('hidden');
       desc.classList.add('hidden');
+      
+      let text = 'ASC';
+      if (isName) text = 'A → Z';
+      else if (isNewest) text = 'Oldest';
+      else if (isRecent) text = 'Least Used';
+
+      if (label) label.textContent = text;
+      if (btn) btn.title = `Current order: Ascending (${text}). Click to switch to Descending.`;
     } else {
       asc.classList.add('hidden');
       desc.classList.remove('hidden');
+
+      let text = 'DESC';
+      if (isName) text = 'Z → A';
+      else if (isNewest) text = 'Newest';
+      else if (isRecent) text = 'Most Used';
+
+      if (label) label.textContent = text;
+      if (btn) btn.title = `Current order: Descending (${text}). Click to switch to Ascending.`;
     }
   }
 
