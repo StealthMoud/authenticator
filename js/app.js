@@ -224,6 +224,7 @@ class AuthenticatorApp {
 
   async openImportModal(mode = 'all') {
     if (!this.importModal) return;
+    this.clearStatus();
     this.importModal.classList.remove('hidden');
 
     await this.checkCameraAvailability();
@@ -261,6 +262,7 @@ class AuthenticatorApp {
 
   closeImportModal() {
     this.stopCamera();
+    this.clearStatus();
     if (this.importModal) {
       this.importModal.classList.add('hidden');
     }
