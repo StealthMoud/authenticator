@@ -86,12 +86,56 @@
           <h2 id="import-title">Add Account</h2>
           <p id="import-subtitle">Scan a QR code image or restore from your cloud vault.</p>
           
-          <div id="drop-zone" class="drop-zone">
-            <div class="drop-zone-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+          <div id="qr-input-section">
+            <div id="qr-mode-tabs" class="qr-mode-tabs hidden">
+              <button id="qr-tab-camera" class="qr-mode-tab active">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                Camera Scan
+              </button>
+              <button id="qr-tab-file" class="qr-mode-tab">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                Upload Image
+              </button>
             </div>
-            <p>Drop QR image here or click to browse</p>
-            <input type="file" id="file-input" accept="image/*" hidden>
+
+            <!-- Camera Scanner Box -->
+            <div id="camera-zone" class="camera-zone hidden">
+              <div id="camera-permission-notice" class="camera-permission-notice hidden">
+                <div class="perm-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                </div>
+                <p>Camera access required to scan QR codes</p>
+                <button id="request-camera-permission-btn" class="btn-premium" style="font-size: 0.75rem; padding: 8px 14px; margin-top: 4px;">
+                  Enable Camera Access
+                </button>
+              </div>
+
+              <div id="camera-active-view" class="camera-active-view">
+                <div class="camera-wrapper">
+                  <video id="camera-stream" autoplay playsinline muted></video>
+                  <div class="camera-overlay">
+                    <div class="scan-corner top-left"></div>
+                    <div class="scan-corner top-right"></div>
+                    <div class="scan-corner bottom-left"></div>
+                    <div class="scan-corner bottom-right"></div>
+                    <div class="scan-line"></div>
+                  </div>
+                </div>
+                <div class="camera-controls">
+                  <select id="camera-select" class="camera-select hidden"></select>
+                  <button id="camera-switch-to-file" class="link-btn" style="font-size: 0.7rem;">Or upload image file</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Image Drop Zone -->
+            <div id="drop-zone" class="drop-zone">
+              <div class="drop-zone-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+              </div>
+              <p>Drop QR image here or click to browse</p>
+              <input type="file" id="file-input" accept="image/*" hidden>
+            </div>
           </div>
           
           <div id="import-status" class="status-message"></div>
