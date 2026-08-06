@@ -115,6 +115,7 @@ AuthenticatorApp.prototype.setupEventListeners = function() {
         document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('active'));
         e.currentTarget.classList.add('active');
         this.currentSort = e.currentTarget.dataset.sort;
+        this.updateOrderIcon();
         this.applyFiltersAndSort();
       });
     }
