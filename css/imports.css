@@ -187,3 +187,194 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* ==================== QR Mode Tabs & Camera Scanner ==================== */
+.qr-mode-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  margin-bottom: 12px;
+  gap: 4px;
+}
+
+.qr-mode-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font);
+  transition: all var(--transition-fast) ease;
+}
+
+.qr-mode-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.qr-mode-tab.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.camera-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+}
+
+.camera-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 240px;
+  height: 170px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+}
+
+#camera-stream {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Reticle corner brackets */
+.scan-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-color: var(--primary-light);
+  border-style: solid;
+  border-width: 0;
+}
+
+.scan-corner.top-left {
+  top: 20px;
+  left: 25px;
+  border-top-width: 2.5px;
+  border-left-width: 2.5px;
+  border-top-left-radius: 4px;
+}
+
+.scan-corner.top-right {
+  top: 20px;
+  right: 25px;
+  border-top-width: 2.5px;
+  border-right-width: 2.5px;
+  border-top-right-radius: 4px;
+}
+
+.scan-corner.bottom-left {
+  bottom: 20px;
+  left: 25px;
+  border-bottom-width: 2.5px;
+  border-left-width: 2.5px;
+  border-bottom-left-radius: 4px;
+}
+
+.scan-corner.bottom-right {
+  bottom: 20px;
+  right: 25px;
+  border-bottom-width: 2.5px;
+  border-right-width: 2.5px;
+  border-bottom-right-radius: 4px;
+}
+
+/* Animated laser line */
+.scan-line {
+  position: absolute;
+  left: 25px;
+  right: 25px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
+  box-shadow: 0 0 8px var(--primary-light);
+  animation: scanLine 2s infinite ease-in-out;
+}
+
+@keyframes scanLine {
+  0% { top: 20px; opacity: 0.3; }
+  50% { top: calc(100% - 22px); opacity: 1; }
+  100% { top: 20px; opacity: 0.3; }
+}
+
+.camera-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.camera-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-main);
+  font-size: 0.68rem;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  font-family: var(--font);
+  max-width: 130px;
+}
+
+.camera-permission-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px 12px;
+  width: 100%;
+}
+
+.camera-permission-notice .perm-icon {
+  color: var(--primary-light);
+  margin-bottom: 8px;
+  opacity: 0.9;
+}
+
+.camera-permission-notice p {
+  font-size: 0.76rem;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.camera-active-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+
