@@ -594,7 +594,7 @@ AuthenticatorApp.prototype.addAccount = function(secret, issuer, label, uri, met
     }
   }
 
-  const id = metadata.id || Date.now();
+  const id = metadata.id || (Date.now() + Math.random());
   const lastUsed = metadata.lastUsed || 0;
   const useCount = metadata.useCount || 0;
   const createdAt = metadata.createdAt || Date.now();
