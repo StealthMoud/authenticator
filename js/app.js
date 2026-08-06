@@ -72,7 +72,7 @@ class AuthenticatorApp {
     this.confirmCancelBtn = document.getElementById('confirm-cancel-btn');
     this.confirmProceedBtn = document.getElementById('confirm-proceed-btn');
 
-    // import modal subviews
+    // import modal subviews & camera
     this.importModalTitle = document.getElementById('import-title');
     this.importModalSubtitle = document.getElementById('import-subtitle');
     this.importDivider = document.getElementById('import-divider');
@@ -80,6 +80,22 @@ class AuthenticatorApp {
     this.cloudAccountsSearchInput = document.getElementById('cloud-accounts-search');
     this.cloudAccountsClearBtn = document.getElementById('cloud-accounts-clear-btn');
     this.currentCloudAccounts = [];
+
+    this.qrInputSection = document.getElementById('qr-input-section');
+    this.qrModeTabs = document.getElementById('qr-mode-tabs');
+    this.qrTabCamera = document.getElementById('qr-tab-camera');
+    this.qrTabFile = document.getElementById('qr-tab-file');
+    this.cameraZone = document.getElementById('camera-zone');
+    this.cameraPermissionNotice = document.getElementById('camera-permission-notice');
+    this.cameraActiveView = document.getElementById('camera-active-view');
+    this.requestCameraPermissionBtn = document.getElementById('request-camera-permission-btn');
+    this.cameraStreamEl = document.getElementById('camera-stream');
+    this.cameraSelect = document.getElementById('camera-select');
+    this.cameraSwitchToFile = document.getElementById('camera-switch-to-file');
+    this.cameraStream = null;
+    this.cameraAnimFrame = null;
+    this.hasCamera = false;
+    this.currentQRMode = 'file';
 
     this.init();
   }
@@ -206,32 +222,45 @@ class AuthenticatorApp {
     }
   }
 
-  openImportModal(mode = 'all') {
+  async openImportModal(mode = 'all') {
     if (!this.importModal) return;
     this.importModal.classList.remove('hidden');
 
+    await this.checkCameraAvailability();
+
     if (mode === 'all') {
       if (this.importModalTitle) this.importModalTitle.textContent = 'Add Account';
-      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code image or restore from your cloud vault.';
-      if (this.dropZone) this.dropZone.classList.remove('hidden');
+      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code or restore from your cloud vault.';
+      if (this.qrInputSection) this.qrInputSection.classList.remove('hidden');
       if (this.importDivider) this.importDivider.classList.remove('hidden');
       if (this.githubRestoreSection) this.githubRestoreSection.classList.remove('hidden');
     } else if (mode === 'add') {
       if (this.importModalTitle) this.importModalTitle.textContent = 'Add Account';
-      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code image to add your 2FA account.';
-      if (this.dropZone) this.dropZone.classList.remove('hidden');
+      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code to add your 2FA account.';
+      if (this.qrInputSection) this.qrInputSection.classList.remove('hidden');
       if (this.importDivider) this.importDivider.classList.add('hidden');
       if (this.githubRestoreSection) this.githubRestoreSection.classList.add('hidden');
     } else if (mode === 'restore') {
       if (this.importModalTitle) this.importModalTitle.textContent = 'Restore Cloud Data';
       if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Select and restore your profiles from the linked cloud vault.';
-      if (this.dropZone) this.dropZone.classList.add('hidden');
+      if (this.qrInputSection) this.qrInputSection.classList.add('hidden');
       if (this.importDivider) this.importDivider.classList.add('hidden');
       if (this.githubRestoreSection) this.githubRestoreSection.classList.remove('hidden');
+    }
+
+    if (mode !== 'restore') {
+      if (this.hasCamera) {
+        if (this.qrModeTabs) this.qrModeTabs.classList.remove('hidden');
+        this.switchQRMode('camera');
+      } else {
+        if (this.qrModeTabs) this.qrModeTabs.classList.add('hidden');
+        this.switchQRMode('file');
+      }
     }
   }
 
   closeImportModal() {
+    this.stopCamera();
     if (this.importModal) {
       this.importModal.classList.add('hidden');
     }
