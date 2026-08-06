@@ -20,11 +20,41 @@ AuthenticatorApp.prototype.showToast = function(msg) {
   setTimeout(() => t.remove(), 2500);
 };
 
-AuthenticatorApp.prototype.showStatus = function(msg, type) {
+AuthenticatorApp.prototype.showStatus = function(msg, type, duration = 3500) {
+  if (!this.statusMsg) return;
+
+  if (this.statusTimer) {
+    clearTimeout(this.statusTimer);
+    this.statusTimer = null;
+  }
+
+  this.statusMsg.innerText = msg;
+  this.statusMsg.className = `status-message status-${type}`;
+  this.statusMsg.classList.remove('fade-out');
+  this.statusMsg.style.display = 'block';
+
+  if (duration > 0) {
+    this.statusTimer = setTimeout(() => {
+      this.statusMsg.classList.add('fade-out');
+      setTimeout(() => {
+        if (this.statusMsg && this.statusMsg.classList.contains('fade-out')) {
+          this.statusMsg.style.display = 'none';
+          this.statusMsg.classList.remove('fade-out');
+        }
+      }, 300);
+    }, duration);
+  }
+};
+
+AuthenticatorApp.prototype.clearStatus = function() {
+  if (this.statusTimer) {
+    clearTimeout(this.statusTimer);
+    this.statusTimer = null;
+  }
   if (this.statusMsg) {
-    this.statusMsg.innerText = msg;
-    this.statusMsg.className = `status-message status-${type}`;
-    this.statusMsg.style.display = 'block';
+    this.statusMsg.style.display = 'none';
+    this.statusMsg.classList.remove('fade-out');
+    this.statusMsg.innerText = '';
   }
 };
 
