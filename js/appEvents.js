@@ -164,4 +164,35 @@ AuthenticatorApp.prototype.setupEventListeners = function() {
       if (file) this.processFile(file);
     });
   }
+
+  // camera tabs & controls
+  if (this.qrTabCamera) {
+    this.qrTabCamera.addEventListener('click', () => this.switchQRMode('camera'));
+  }
+  if (this.qrTabFile) {
+    this.qrTabFile.addEventListener('click', () => this.switchQRMode('file'));
+  }
+  if (this.cameraSwitchToFile) {
+    this.cameraSwitchToFile.addEventListener('click', () => this.switchQRMode('file'));
+  }
+  if (this.cameraSelect) {
+    this.cameraSelect.addEventListener('change', (e) => {
+      if (e.target.value) {
+        this.startCamera(e.target.value);
+      }
+    });
+  }
+  if (this.requestCameraPermissionBtn) {
+    this.requestCameraPermissionBtn.addEventListener('click', () => {
+      chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') });
+    });
+  }
+
+  window.addEventListener('beforeunload', () => this.stopCamera());
+  window.addEventListener('focus', () => {
+    if (this.currentQRMode === 'camera' && !this.cameraStream && this.importModal && !this.importModal.classList.contains('hidden')) {
+      this.startCamera();
+    }
+  });
 };
+
