@@ -1,203 +1,265 @@
-/* global OTPAuth */
+/* global VaultSync */
 
-// background worker for github sync operations
+importScripts('lib/vaultSync.js');
+
+const GITHUB_API_ROOT = 'https://api.github.com';
+const VAULT_PATH = 'profiles/common.json';
+const REQUEST_TIMEOUT_MS = 15000;
+const MAX_SYNC_ATTEMPTS = 3;
+const MAX_VAULT_BYTES = 900000;
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'githubSync') {
-    handleGithubSync(request.data).then(sendResponse);
-    return true; // keep the message channel open for async
+  if (!isTrustedSender(sender)) {
+    sendResponse({ success: false, error: 'Request rejected' });
+    return false;
   }
+
+  const action = request && request.action;
+  let operation;
+
+  if (action === 'vault:sync' || action === 'githubSync') {
+    const payload = action === 'githubSync'
+      ? { accounts: request.data, deletions: [] }
+      : request.payload;
+    operation = syncVault(payload);
+  } else if (action === 'vault:fetch') {
+    operation = fetchVaultProfiles();
+  } else if (action === 'vault:identity') {
+    operation = getProfileIdentity().then((profile) => ({ success: true, profile }));
+  } else {
+    return false;
+  }
+
+  operation
+    .then(sendResponse)
+    .catch((error) => sendResponse({ success: false, error: humanizeError(error) }));
+  return true;
 });
 
-async function getUserInfo() {
-  return new Promise((resolve) => {
+function isTrustedSender(sender) {
+  if (!sender || sender.id !== chrome.runtime.id) return false;
+  if (!sender.url) return true;
+  return sender.url.startsWith(chrome.runtime.getURL(''));
+}
+
+async function getProfileIdentity() {
+  const email = await new Promise((resolve) => {
     chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (userInfo) => {
-      resolve(userInfo.email || 'offline-profile');
+      if (chrome.runtime.lastError) {
+        resolve('');
+        return;
+      }
+      resolve((userInfo && userInfo.email ? userInfo.email : '').trim().toLowerCase());
     });
+  });
+
+  if (email) return email;
+
+  const stored = await chrome.storage.local.get('localProfileId');
+  if (stored.localProfileId) return stored.localProfileId;
+
+  const generated = `local-${VaultSync.createAccountId().replace(/^acct-/, '').slice(0, 18)}`;
+  await chrome.storage.local.set({ localProfileId: generated });
+  return generated;
+}
+
+async function getGithubConfig() {
+  const stored = await chrome.storage.local.get(['ghToken', 'ghRepo']);
+  const storedToken = typeof stored.ghToken === 'string' ? stored.ghToken.trim() : '';
+  const token = /^[A-Za-z0-9_]{20,512}$/.test(storedToken) ? storedToken : '';
+  const repo = VaultSync.normalizeRepo(stored.ghRepo);
+
+  if (!token || !repo) {
+    throw new Error('CONFIG_MISSING');
+  }
+
+  return { token, repo };
+}
+
+function githubContentsUrl(repo) {
+  const [owner, name] = repo.split('/').map(encodeURIComponent);
+  return `${GITHUB_API_ROOT}/repos/${owner}/${name}/contents/${VAULT_PATH}`;
+}
+
+function githubHeaders(token) {
+  return {
+    Accept: 'application/vnd.github+json',
+    Authorization: `Bearer ${token}`,
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function decodeBase64(value) {
+  const binary = atob(String(value || '').replace(/\s/g, ''));
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function encodeBase64(value) {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  const chunkSize = 0x8000;
+
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + chunkSize));
+  }
+
+  return btoa(binary);
+}
+
+async function readRemoteVault(config) {
+  const response = await fetchWithTimeout(githubContentsUrl(config.repo), {
+    headers: githubHeaders(config.token),
+    cache: 'no-store'
+  });
+
+  if (response.status === 404) {
+    return { sha: '', payload: VaultSync.parseVaultPayload({ accounts: [] }) };
+  }
+
+  if (!response.ok) throw await githubError(response);
+
+  const file = await response.json();
+  if (!file || typeof file.content !== 'string') throw new Error('VAULT_INVALID');
+
+  try {
+    const parsed = JSON.parse(decodeBase64(file.content));
+    return { sha: file.sha || '', payload: VaultSync.parseVaultPayload(parsed) };
+  } catch (error) {
+    throw new Error('VAULT_INVALID');
+  }
+}
+
+async function writeRemoteVault(config, sha, accounts) {
+  const payload = {
+    schemaVersion: VaultSync.SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    accounts
+  };
+  const serialized = JSON.stringify(payload, null, 2);
+
+  if (new TextEncoder().encode(serialized).byteLength > MAX_VAULT_BYTES) {
+    throw new Error('VAULT_TOO_LARGE');
+  }
+
+  const body = {
+    message: 'Sync authenticator vault',
+    content: encodeBase64(serialized)
+  };
+  if (sha) body.sha = sha;
+
+  return fetchWithTimeout(githubContentsUrl(config.repo), {
+    method: 'PUT',
+    headers: {
+      ...githubHeaders(config.token),
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
   });
 }
 
-function mergeGlobalVault(local, remote, userEmail) {
-  const map = new Map();
-  let pulled = 0;
-  let pushed = 0;
-  
-  // Index remote accounts by secret
-  if (Array.isArray(remote)) {
-    remote.forEach(acc => {
-      if (acc && acc.secret) {
-        const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
-        map.set(cleanSecret, { ...acc, profiles: acc.profiles || [] });
-      }
-    });
-  }
-  
-  const localSecrets = new Set();
-  if (Array.isArray(local)) {
-    local.forEach(acc => {
-      if (acc && acc.secret) {
-        const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
-        localSecrets.add(cleanSecret);
-        
-        const existing = map.get(cleanSecret);
-        if (!existing) {
-          // local-only account, pushed to remote
-          pushed++;
-          map.set(cleanSecret, {
-            id: acc.id || Date.now() + Math.random(),
-            secret: acc.secret,
-            issuer: acc.issuer,
-            label: acc.label,
-            uri: acc.uri,
-            lastUsed: acc.lastUsed || 0,
-            useCount: acc.useCount || 0,
-            createdAt: acc.createdAt || Date.now(),
-            profiles: [userEmail]
-          });
-        } else {
-          // existing account, merge details and profiles
-          const merged = { ...existing };
-          merged.id = existing.id || acc.id || Date.now() + Math.random();
-          merged.lastUsed = Math.max(existing.lastUsed || 0, acc.lastUsed || 0);
-          merged.useCount = Math.max(existing.useCount || 0, acc.useCount || 0);
-          const remoteTime = (existing.createdAt && existing.createdAt !== Infinity) ? existing.createdAt : Infinity;
-          const localTime = (acc.createdAt && acc.createdAt !== Infinity) ? acc.createdAt : Infinity;
-          const minTime = Math.min(remoteTime, localTime);
-          merged.createdAt = minTime === Infinity ? Date.now() : minTime;
-          merged.label = acc.label || existing.label;
-          merged.issuer = acc.issuer || existing.issuer;
-          merged.uri = acc.uri || existing.uri;
-          if (!merged.profiles.includes(userEmail)) {
-            merged.profiles.push(userEmail);
-          }
-          map.set(cleanSecret, merged);
-        }
-      }
-    });
-  }
-  
-  // If remote account has userEmail in profiles, but NOT in local, user deleted it locally
-  map.forEach((acc, cleanSecret) => {
-    if (acc.profiles.includes(userEmail) && !localSecrets.has(cleanSecret)) {
-      acc.profiles = acc.profiles.filter(email => email !== userEmail);
-      if (acc.profiles.length === 0) {
-        map.delete(cleanSecret);
-      }
+async function syncVault(rawPayload) {
+  const payload = rawPayload && typeof rawPayload === 'object' ? rawPayload : {};
+  const accounts = VaultSync.sanitizeAccounts(payload.accounts);
+  const deletions = VaultSync.normalizeDeletions(payload.deletions);
+  const config = await getGithubConfig();
+  const profile = await getProfileIdentity();
+
+  let lastConflict = false;
+
+  for (let attempt = 0; attempt < MAX_SYNC_ATTEMPTS; attempt += 1) {
+    const remote = await readRemoteVault(config);
+    const merged = VaultSync.mergeVault(accounts, remote.payload.accounts, profile, deletions);
+    const remoteChanged = VaultSync.vaultFingerprint(merged.commonAccounts)
+      !== VaultSync.vaultFingerprint(remote.payload.accounts);
+
+    if (!remoteChanged) {
+      return syncResult(merged, profile, false);
     }
-  });
 
-  // Count pulled accounts
-  if (Array.isArray(remote)) {
-    remote.forEach(acc => {
-      if (acc && acc.secret) {
-        const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
-        if (acc.profiles && acc.profiles.includes(userEmail) && !localSecrets.has(cleanSecret)) {
-          pulled++;
-        }
-      }
-    });
+    const response = await writeRemoteVault(config, remote.sha, merged.commonAccounts);
+
+    if (response.status === 409 || response.status === 422) {
+      lastConflict = true;
+      continue;
+    }
+
+    if (!response.ok) throw await githubError(response);
+
+    return syncResult(merged, profile, true);
   }
 
-  const allAccounts = Array.from(map.values());
-  const localClientAccounts = allAccounts
-    .filter(acc => acc.profiles.includes(userEmail))
-    .map(acc => ({
-      id: acc.id || Date.now() + Math.random(),
-      secret: acc.secret,
-      issuer: acc.issuer,
-      label: acc.label,
-      uri: acc.uri,
-      lastUsed: acc.lastUsed || 0,
-      useCount: acc.useCount || 0,
-      createdAt: acc.createdAt || 0,
-      profile: acc.profiles.join(', ')
-    }));
-
-  return { commonAccounts: allAccounts, localAccounts: localClientAccounts, pulled, pushed };
+  if (lastConflict) throw new Error('SYNC_CONFLICT');
+  throw new Error('SYNC_FAILED');
 }
 
-function decodeBase64(str) {
+function syncResult(merged, profile, wroteRemote) {
+  return {
+    success: true,
+    profile,
+    mergedAccounts: merged.localAccounts,
+    profiles: VaultSync.buildProfiles(merged.commonAccounts),
+    pulled: merged.pulled,
+    pushed: merged.pushed,
+    deleted: merged.deleted,
+    wroteRemote,
+    syncedAt: new Date().toISOString()
+  };
+}
+
+async function fetchVaultProfiles() {
+  const config = await getGithubConfig();
+  const remote = await readRemoteVault(config);
+  const profile = await getProfileIdentity();
+
+  return {
+    success: true,
+    profile,
+    profiles: VaultSync.buildProfiles(remote.payload.accounts),
+    updatedAt: remote.payload.updatedAt
+  };
+}
+
+async function githubError(response) {
+  let message = '';
   try {
-    return decodeURIComponent(escape(atob(str.replace(/\s/g, ''))));
-  } catch (e) {
-    return atob(str.replace(/\s/g, ''));
+    const body = await response.json();
+    message = typeof body.message === 'string' ? body.message : '';
+  } catch (error) {
+    message = '';
   }
+
+  const failure = new Error(`GITHUB_${response.status}`);
+  failure.status = response.status;
+  failure.githubMessage = message;
+  return failure;
 }
 
-function encodeBase64(str) {
-  return btoa(unescape(encodeURIComponent(str)));
-}
+function humanizeError(error) {
+  const code = error && error.name === 'AbortError' ? 'TIMEOUT' : error && error.message;
 
-async function handleGithubSync(data) {
-  const { ghToken, ghRepo } = await chrome.storage.local.get(['ghToken', 'ghRepo']);
-  
-  if (!ghToken || !ghRepo) {
-    return { success: false, error: 'Cloud vault not configured' };
-  }
-
-  const userEmail = await getUserInfo();
-  const fileName = 'profiles/common.json';
-  const url = `https://api.github.com/repos/${ghRepo}/contents/${fileName}`;
-  
-  try {
-    let sha;
-    let remoteAccounts = [];
-    const getRes = await fetch(url, {
-      headers: { 'Authorization': `token ${ghToken}` }
-    });
-    
-    if (getRes.status === 200) {
-      const existing = await getRes.json();
-      sha = existing.sha;
-      try {
-        const decoded = decodeBase64(existing.content);
-        const parsed = JSON.parse(decoded);
-        remoteAccounts = parsed.accounts || [];
-      } catch (err) {
-        console.error('Failed to parse remote accounts:', err);
-      }
-    } else if (getRes.status === 401) {
-      return { success: false, error: 'Token expired or invalid' };
-    } else if (getRes.status === 404) {
-      // file doesn't exist yet, that's fine - first sync
-    }
-
-    // Bidirectional merge into common vault
-    const mergeResult = mergeGlobalVault(data, remoteAccounts, userEmail);
-
-    const profilePayload = {
-      accounts: mergeResult.commonAccounts,
-      updatedAt: new Date().toISOString()
-    };
-
-    const putRes = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `token ${ghToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        message: `vault sync for ${userEmail}`,
-        content: encodeBase64(JSON.stringify(profilePayload, null, 2)),
-        sha: sha
-      })
-    });
-
-    if (putRes.ok) {
-      return {
-        success: true,
-        profile: userEmail,
-        mergedAccounts: mergeResult.localAccounts,
-        pulled: mergeResult.pulled,
-        pushed: mergeResult.pushed
-      };
-    } else {
-      const err = await putRes.json();
-      if (putRes.status === 401) return { success: false, error: 'Token expired or invalid' };
-      if (putRes.status === 404) return { success: false, error: 'Repository not found — check the path' };
-      if (putRes.status === 409) return { success: false, error: 'Conflict — try syncing again' };
-      return { success: false, error: err.message || 'Unknown error' };
-    }
-  } catch (e) {
-    return { success: false, error: e.message || 'Network error' };
-  }
+  if (code === 'CONFIG_MISSING') return 'Cloud vault is not configured';
+  if (code === 'VAULT_INVALID') return 'The cloud vault file is not valid JSON';
+  if (code === 'VAULT_TOO_LARGE') return 'The cloud vault is too large to sync';
+  if (code === 'SYNC_CONFLICT') return 'The vault changed repeatedly. Sync again in a moment';
+  if (code === 'TIMEOUT') return 'GitHub did not respond in time';
+  if (code === 'GITHUB_401') return 'The GitHub token is invalid or expired';
+  if (code === 'GITHUB_403') return 'GitHub denied access. Check token permissions and rate limits';
+  if (code === 'GITHUB_404') return 'Repository not found or the token cannot access it';
+  if (code === 'GITHUB_413') return 'The cloud vault is too large to sync';
+  if (code === 'GITHUB_429') return 'GitHub rate limit reached. Try again later';
+  if (code && code.startsWith('GITHUB_')) return 'GitHub could not complete the request';
+  if (typeof code === 'string' && /Failed to fetch|NetworkError/i.test(code)) return 'Network connection failed';
+  return 'Cloud sync failed';
 }

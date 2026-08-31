@@ -1,74 +1,135 @@
 if (typeof chrome === 'undefined' || !chrome.storage) {
+  const now = Date.now();
+  const mockAccounts = [
+    {
+      id: 'demo-github',
+      issuer: 'GitHub',
+      label: 'mira@northstar.dev',
+      secret: 'JBSWY3DPEHPK3PXP',
+      uri: 'otpauth://totp/GitHub:mira%40northstar.dev?issuer=GitHub&secret=JBSWY3DPEHPK3PXP&algorithm=SHA1&digits=6&period=30',
+      createdAt: now - 86400000 * 94,
+      updatedAt: now - 3600000,
+      lastUsed: now - 180000,
+      useCount: 38
+    },
+    {
+      id: 'demo-cloudflare',
+      issuer: 'Cloudflare',
+      label: 'northstar.dev',
+      secret: 'KRUGS4ZANFZSAYJA',
+      uri: 'otpauth://totp/Cloudflare:northstar.dev?issuer=Cloudflare&secret=KRUGS4ZANFZSAYJA&algorithm=SHA1&digits=6&period=30',
+      createdAt: now - 86400000 * 41,
+      updatedAt: now - 7200000,
+      lastUsed: now - 86400000 * 2,
+      useCount: 17
+    },
+    {
+      id: 'demo-openai',
+      issuer: 'OpenAI',
+      label: 'research@northstar.dev',
+      secret: 'ONSWG4TFOQXHI2DF',
+      uri: 'otpauth://totp/OpenAI:research%40northstar.dev?issuer=OpenAI&secret=ONSWG4TFOQXHI2DF&algorithm=SHA256&digits=8&period=60',
+      createdAt: now - 86400000 * 16,
+      updatedAt: now - 86400000,
+      lastUsed: now - 86400000 * 4,
+      useCount: 9
+    },
+    {
+      id: 'demo-slack',
+      issuer: 'Slack',
+      label: 'Northstar workspace',
+      secret: 'GEZDGNBVGY3TQOJQ',
+      uri: 'otpauth://totp/Slack:Northstar%20workspace?issuer=Slack&secret=GEZDGNBVGY3TQOJQ&algorithm=SHA1&digits=6&period=30',
+      createdAt: now - 86400000 * 8,
+      updatedAt: now - 86400000 * 2,
+      lastUsed: 0,
+      useCount: 0
+    }
+  ];
+
+  const state = {
+    authenticator_accounts: mockAccounts,
+    privacyMode: false,
+    sortAscending: true,
+    currentSort: 'custom',
+    loadedProfiles: [],
+    localUnsynced: false,
+    deletedAccountKeys: [],
+    popupWidth: 420,
+    popupHeight: 600
+  };
+
+  const pickValues = (keys) => {
+    if (typeof keys === 'string') return { [keys]: state[keys] };
+    if (Array.isArray(keys)) {
+      return keys.reduce((result, key) => {
+        if (Object.prototype.hasOwnProperty.call(state, key)) result[key] = state[key];
+        return result;
+      }, {});
+    }
+    if (keys && typeof keys === 'object') {
+      return Object.keys(keys).reduce((result, key) => {
+        result[key] = Object.prototype.hasOwnProperty.call(state, key) ? state[key] : keys[key];
+        return result;
+      }, {});
+    }
+    return { ...state };
+  };
+
   window.chrome = {
     identity: {
-      getProfileUserInfo: (opts, cb) => cb({ email: 'demo@example.com' })
+      getProfileUserInfo: (options, callback) => callback({ email: 'demo@this-browser.local' })
+    },
+    permissions: {
+      contains: (request, callback) => callback(true),
+      request: (request, callback) => callback(true),
+      remove: (request, callback) => callback(true)
     },
     storage: {
       local: {
-        get: (keys, cb) => {
-          const res = {};
-          // demo accounts for local dev preview only — not real credentials
-          const mockAccounts = [
-            { id: '1', issuer: 'Google', label: 'demo@example.com', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '2', issuer: 'GitHub', label: 'demo_user', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '3', issuer: 'Discord', label: 'demo_user#0001', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '4', issuer: 'Microsoft', label: 'demo@example.com', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '5', issuer: 'Slack', label: 'demo workspace', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '6', issuer: 'Facebook', label: 'demo profile', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '7', issuer: 'Instagram', label: 'demo_photos', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '8', issuer: 'Twitter', label: 'demo_tweets', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '9', issuer: 'Twitch', label: 'demo_stream', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '10', issuer: 'GitLab', label: 'demo_dev', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '11', issuer: 'Steam', label: 'demo_gamer', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '12', issuer: 'Epic Games', label: 'demo_epic', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '13', issuer: 'Reddit', label: 'demo_lurker', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '14', issuer: 'Bitbucket', label: 'demo_repos', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '15', issuer: 'DigitalOcean', label: 'demo_vps', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '16', issuer: 'Heroku', label: 'demo_dyno', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '17', issuer: 'Cloudflare', label: 'demo_dns', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '18', issuer: 'OpenAI', label: 'demo_api', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '19', issuer: 'Zoom', label: 'demo_meeting', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '20', issuer: 'Spotify', label: 'demo_music', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '21', issuer: 'PayPal', label: 'demo_payments', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '22', issuer: 'Stripe', label: 'demo_merchant', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '23', issuer: 'Adobe', label: 'demo_creative', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '24', issuer: 'LinkedIn', label: 'demo_network', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '25', issuer: 'Yahoo', label: 'demo_mail', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '26', issuer: 'Amazon', label: 'demo_shop', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '27', issuer: 'Apple', label: 'demo_icloud', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '28', issuer: 'Coinbase', label: 'demo_wallet', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '29', issuer: 'Binance', label: 'demo_exchange', secret: 'JBSWY3DPEHPK3PXP' },
-            { id: '30', issuer: 'Voorivex', label: 'demo_academy', secret: 'JBSWY3DPEHPK3PXP', profile: 'alice@example.com, bob@example.com, carol@example.com' },
-            { id: '31', issuer: 'HackerOne', label: 'demo_h1', secret: 'JBSWY3DPEHPK3PXP', profile: 'bob@example.com' },
-            { id: '32', issuer: 'Bugcrowd', label: 'demo_bugcrowd', secret: 'JBSWY3DPEHPK3PXP', profile: 'alice@example.com' },
-            { id: '33', issuer: 'Intigriti', label: 'demo_intigriti', secret: 'JBSWY3DPEHPK3PXP', profile: 'carol@example.com' },
-            { id: '34', issuer: 'YesWeHack', label: 'demo_ywh', secret: 'JBSWY3DPEHPK3PXP', profile: 'bob@example.com' },
-            { id: '35', issuer: 'Synack', label: 'demo_synack', secret: 'JBSWY3DPEHPK3PXP', profile: 'bob@example.com' },
-            { id: '36', issuer: 'Notion', label: 'demo_notes', secret: 'JBSWY3DPEHPK3PXP', profile: 'alice@example.com' },
-            { id: '37', issuer: 'ngrok', label: 'demo_tunnels', secret: 'JBSWY3DPEHPK3PXP', profile: 'carol@example.com' }
-          ];
-
-          keys.forEach(k => {
-            if (k === 'authenticator_accounts') {
-              res[k] = mockAccounts;
-            } else if (k === 'privacyMode') {
-              res[k] = false;
-            } else if (k === 'sortAscending') {
-              res[k] = true;
-            } else if (k === 'popupWidth') {
-              res[k] = 360;
-            } else if (k === 'popupHeight') {
-              res[k] = 520;
-            }
-          });
-          cb(res);
+        get: (keys, callback) => callback(pickValues(keys)),
+        set: (values, callback) => {
+          Object.assign(state, values);
+          if (callback) callback();
         },
-        set: (vals, cb) => { if (cb) cb(); },
-        remove: (keys, cb) => { if (cb) cb(); }
+        remove: (keys, callback) => {
+          (Array.isArray(keys) ? keys : [keys]).forEach((key) => delete state[key]);
+          if (callback) callback();
+        }
       }
     },
+    tabs: {
+      create: () => {}
+    },
     runtime: {
-      sendMessage: (msg, cb) => { if (cb) cb({ success: true }); }
+      id: 'authenticator-demo',
+      lastError: null,
+      getURL: (path) => new URL(path || '', window.location.href).href,
+      sendMessage: (message, callback) => {
+        if (message.action === 'vault:identity') {
+          callback({ success: true, profile: 'demo@this-browser.local' });
+          return;
+        }
+        if (message.action === 'vault:fetch') {
+          callback({ success: true, profile: 'demo@this-browser.local', profiles: [] });
+          return;
+        }
+        if (message.action === 'vault:sync' || message.action === 'githubSync') {
+          const accounts = message.payload ? message.payload.accounts : message.data;
+          callback({
+            success: true,
+            profile: 'demo@this-browser.local',
+            mergedAccounts: accounts,
+            profiles: [],
+            pulled: 0,
+            pushed: 0,
+            deleted: 0,
+            syncedAt: new Date().toISOString()
+          });
+          return;
+        }
+        callback({ success: false, error: 'Unknown demo action' });
+      }
     }
   };
 }

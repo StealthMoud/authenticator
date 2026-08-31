@@ -1,21 +1,46 @@
-/* global OTPAuth */
+/* global OTPAuth, VaultSync */
 
 class AuthenticatorApp {
   constructor() {
+    this.storageKey = 'authenticator_accounts';
     this.accounts = [];
     this.filteredAccounts = [];
-    this.timerInterval = null;
-    this.storageKey = 'authenticator_accounts';
+    this.deletedAccountKeys = [];
+    this.loadedProfiles = [];
+    this.currentCloudAccounts = [];
+    this.selectedProfileEmails = new Set();
+    this.selectedAccountSecrets = new Set();
+
     this.currentSort = 'custom';
     this.sortAscending = true;
     this.privacyMode = false;
     this.currentEmail = '';
-    this.loadedProfiles = [];
+    this.lastSyncAt = '';
+    this.localUnsynced = false;
+    this.syncError = false;
+    this.syncErrorMessage = '';
     this.editingAccountId = null;
-    this.selectedProfileEmails = new Set();
-    this.selectedAccountSecrets = new Set();
+    this.isEditingConfig = false;
+    this.currentQRMode = 'file';
+    this.currentImportView = 'scan';
+    this.hasCamera = false;
+    this.cameraPermissionState = 'prompt';
+    this.cameraStream = null;
+    this.cameraAnimFrame = null;
+    this.cameraCanvas = null;
+    this.lastCameraScanAt = 0;
+    this.timerInterval = null;
+    this.statusTimer = null;
+    this.syncInFlight = false;
+    this.syncQueued = false;
+    this.githubPermissionGranted = false;
+    this.lastFocusedElement = null;
 
-    // cache dom refs
+    this.cacheDomReferences();
+    this.init().catch((error) => this.handleInitFailure(error));
+  }
+
+  cacheDomReferences() {
     this.accountList = document.getElementById('account-list');
     this.accountCounter = document.getElementById('account-counter');
     this.searchInput = document.getElementById('search-input');
@@ -24,12 +49,14 @@ class AuthenticatorApp {
     this.importModal = document.getElementById('import-modal');
     this.dropZone = document.getElementById('drop-zone');
     this.fileInput = document.getElementById('file-input');
+    this.backupDropZone = document.getElementById('backup-drop-zone');
+    this.backupFileInput = document.getElementById('backup-file-input');
     this.statusMsg = document.getElementById('import-status');
-    this.progressBar = document.getElementById('global-timer');
     this.clearAllBtn = document.getElementById('clear-all-btn');
     this.privacyBtn = document.getElementById('privacy-btn');
     this.toastContainer = document.getElementById('toast-container');
     this.githubSyncBtn = document.getElementById('github-sync-btn');
+    this.syncButtonText = document.getElementById('sync-button-text');
     this.exportVaultBtn = document.getElementById('export-vault-btn');
     this.saveGhConfigBtn = document.getElementById('save-gh-config');
     this.fetchGithubBtn = document.getElementById('fetch-github-btn');
@@ -41,47 +68,43 @@ class AuthenticatorApp {
     this.syncErrorBanner = document.getElementById('sync-error-banner');
     this.syncErrorText = document.getElementById('sync-error-text');
     this.fixSyncBtn = document.getElementById('fix-sync-btn');
-
-    // status badge
     this.statusBadge = document.getElementById('status-badge');
     this.statusText = document.getElementById('status-text');
+    this.statusMeta = document.getElementById('status-meta');
 
-    // settings panel
     this.settingsBtn = document.getElementById('settings-btn');
     this.settingsModal = document.getElementById('settings-modal');
+    this.settingsSetupView = document.getElementById('settings-setup-view');
+    this.settingsConnectedView = document.getElementById('settings-connected-view');
     this.disconnectBtn = document.getElementById('disconnect-vault-btn');
     this.editVaultBtn = document.getElementById('edit-vault-btn');
     this.cancelGhEditBtn = document.getElementById('cancel-gh-edit');
-    this.settingsConnectedView = document.getElementById('settings-connected-view');
-    this.settingsSetupView = document.getElementById('settings-setup-view');
     this.settingsRepoDisplay = document.getElementById('settings-repo-display');
     this.settingsEmailDisplay = document.getElementById('settings-email-display');
     this.settingsSyncStatus = document.getElementById('settings-sync-status');
+    this.settingsLastSync = document.getElementById('settings-last-sync');
     this.settingsErrorDetails = document.getElementById('settings-error-details');
     this.settingsErrorText = document.getElementById('settings-error-text');
-    this.isEditingConfig = false;
+    this.tokenFieldHint = document.getElementById('token-field-hint');
 
-    // cloud fetch notice
     this.cloudFetchNotice = document.getElementById('cloud-fetch-unavailable');
     this.openSettingsFromImport = document.getElementById('open-settings-from-import');
+    this.cloudAccountsSearchInput = document.getElementById('cloud-accounts-search');
+    this.cloudAccountsClearBtn = document.getElementById('cloud-accounts-clear-btn');
 
-    // confirm overlay
     this.confirmOverlay = document.getElementById('confirm-overlay');
     this.confirmTitle = document.getElementById('confirm-title');
     this.confirmMessage = document.getElementById('confirm-message');
     this.confirmCancelBtn = document.getElementById('confirm-cancel-btn');
     this.confirmProceedBtn = document.getElementById('confirm-proceed-btn');
 
-    // import modal subviews & camera
     this.importModalTitle = document.getElementById('import-title');
     this.importModalSubtitle = document.getElementById('import-subtitle');
     this.importDivider = document.getElementById('import-divider');
-    this.githubRestoreSection = document.getElementById('github-restore-section');
-    this.cloudAccountsSearchInput = document.getElementById('cloud-accounts-search');
-    this.cloudAccountsClearBtn = document.getElementById('cloud-accounts-clear-btn');
-    this.currentCloudAccounts = [];
-
     this.qrInputSection = document.getElementById('qr-input-section');
+    this.manualInputSection = document.getElementById('manual-input-section');
+    this.githubRestoreSection = document.getElementById('github-restore-section');
+    this.importViewTabs = Array.from(document.querySelectorAll('.import-view-tab'));
     this.qrModeTabs = document.getElementById('qr-mode-tabs');
     this.qrTabCamera = document.getElementById('qr-tab-camera');
     this.qrTabFile = document.getElementById('qr-tab-file');
@@ -92,256 +115,291 @@ class AuthenticatorApp {
     this.cameraStreamEl = document.getElementById('camera-stream');
     this.cameraSelect = document.getElementById('camera-select');
     this.cameraSwitchToFile = document.getElementById('camera-switch-to-file');
-    this.cameraStream = null;
-    this.cameraAnimFrame = null;
-    this.hasCamera = false;
-    this.currentQRMode = 'file';
-
-    this.init();
+    this.manualForm = document.getElementById('manual-form');
+    this.manualIssuerInput = document.getElementById('manual-issuer');
+    this.manualLabelInput = document.getElementById('manual-label');
+    this.manualSecretInput = document.getElementById('manual-secret');
+    this.manualAlgorithmInput = document.getElementById('manual-algorithm');
+    this.manualDigitsInput = document.getElementById('manual-digits');
+    this.manualPeriodInput = document.getElementById('manual-period');
+    this.globalPeriodRing = document.querySelector('.global-period');
+    this.globalPeriod = document.querySelector('.global-period span');
   }
 
   async init() {
+    document.documentElement.dataset.ready = 'false';
     this.setupResizeHandler();
     await this.loadAccounts();
     await this.loadGithubConfig();
-    this.detectIdentity();
+    await this.detectIdentity();
+    this.githubPermissionGranted = await this.hasGithubPermission();
     this.setupEventListeners();
     this.startTimer();
     this.applyFiltersAndSort();
     this.updateConnectionStatus();
+    document.documentElement.dataset.ready = 'true';
 
-    // Silently trigger pull-and-merge sync on startup if configured
-    if (this.ghToken && this.ghRepo) {
-      this.syncToGithub(true);
-      this.silentFetchAndResolveProfiles();
+    if (this.ghToken && this.ghRepo && this.githubPermissionGranted) {
+      await this.syncToGithub(true);
     }
   }
 
-  // detect which Chrome profile is running
-  detectIdentity() {
-    chrome.identity.getProfileUserInfo({ accountStatus: 'ANY' }, (info) => {
-      this.currentEmail = info.email || 'offline-profile';
+  handleInitFailure(error) {
+    document.documentElement.dataset.ready = 'true';
+    this.filteredAccounts = [...this.accounts];
+    try {
+      this.render();
       this.updateConnectionStatus();
-    });
+      this.showToast('The vault opened in recovery mode. Reload to try again.', 'error');
+    } catch (renderError) {
+      // Keep the extension page visible even if its recovery render cannot complete.
+    }
+    console.error('Authenticator initialization failed', error);
+  }
+
+  async detectIdentity() {
+    const response = await this.sendRuntimeMessage({ action: 'vault:identity' });
+    this.currentEmail = response && response.success && response.profile
+      ? response.profile
+      : 'this-browser';
+    this.updateConnectionStatus();
   }
 
   async loadAccounts() {
-    return new Promise((resolve) => {
-      chrome.storage.local.get([this.storageKey, 'privacyMode', 'sortAscending', 'syncError', 'syncErrorMessage', 'loadedProfiles', 'localUnsynced'], (result) => {
-        this.accounts = result[this.storageKey] || [];
-        this.privacyMode = result.privacyMode || false;
-        this.sortAscending = (result.sortAscending !== undefined) ? result.sortAscending : true;
-        this.loadedProfiles = result.loadedProfiles || [];
-        this.localUnsynced = result.localUnsynced || false;
-        
-        // Auto-fix any missing/Unknown issuers from the label if possible
-        let modified = false;
+    const keys = [
+      this.storageKey,
+      'privacyMode',
+      'sortAscending',
+      'currentSort',
+      'syncError',
+      'syncErrorMessage',
+      'loadedProfiles',
+      'localUnsynced',
+      'deletedAccountKeys',
+      'lastSyncAt'
+    ];
+    const result = await this.storageGet(keys);
+    const rawAccounts = Array.isArray(result[this.storageKey]) ? result[this.storageKey] : [];
 
-        // Backfill createdAt for accounts that predate this field.
-        // Only trust acc.id as a creation timestamp if it predates the
-        // merge-overwrite bug (June 18 2026). Otherwise leave it empty
-        // so the UI shows "Unknown" rather than a wrong date.
-        const mergeCorruptionCutoff = 1750204800000; // 2026-06-18T00:00:00Z
-        this.accounts.forEach(acc => {
-          if (!acc.createdAt && acc.id) {
-            if (typeof acc.id === 'number' && acc.id < mergeCorruptionCutoff) {
-              acc.createdAt = acc.id;
-            }
-            // else leave createdAt falsy — the next sync will set it properly
-            modified = true;
-          }
-        });
-        this.accounts.forEach(acc => {
-          let uriModified = false;
-          if (acc.uri) {
-            try {
-              const parsedUrl = new URL(acc.uri);
-              const queryIssuer = (parsedUrl.searchParams.get('issuer') || '').trim();
-              if (queryIssuer && acc.issuer && acc.issuer.toLowerCase() !== queryIssuer.toLowerCase()) {
-                const totp = OTPAuth.URI.parse(acc.uri);
-                if (totp.issuer && totp.issuer.toLowerCase() === acc.issuer.toLowerCase()) {
-                  // Fixed stored issuer if it was matched against path-based prefix mistakenly
-                  acc.issuer = queryIssuer;
-                  acc.label = totp.label ? `${totp.issuer}:${totp.label}` : totp.issuer;
-                  uriModified = true;
-                  modified = true;
-                }
-              }
-            } catch (e) {
-              // Ignore invalid URIs
-            }
-          }
-          if (!uriModified && (!acc.issuer || acc.issuer.toLowerCase() === 'unknown')) {
-            const inferred = this.inferIssuer(acc.label, acc.issuer);
-            if (inferred && inferred.toLowerCase() !== 'unknown') {
-              acc.issuer = inferred;
-              modified = true;
-            }
-          }
-        });
-
-        // Resolve profile emails from loadedProfiles
-        if (this.resolveProfileEmails()) {
-          modified = true;
+    this.accounts = VaultSync.sanitizeAccounts(rawAccounts).map((account) => {
+      if ((!account.issuer || account.issuer.toLowerCase() === 'unknown') && account.uri) {
+        try {
+          const otp = OTPAuth.URI.parse(account.uri);
+          const enriched = VaultSync.normalizeAccount({
+            ...account,
+            issuer: otp.issuer || this.inferIssuer(otp.label, 'Unknown'),
+            label: otp.label || account.label
+          });
+          if (enriched) account = enriched;
+        } catch (error) {
+          account.issuer = this.inferIssuer(account.label, account.issuer);
         }
-
-        if (modified) {
-          this.saveAccounts(true);
-        }
-
-        this.filteredAccounts = [...this.accounts];
-        this.syncError = result.syncError || false;
-        this.syncErrorMessage = result.syncErrorMessage || '';
-        this.updateOrderIcon();
-        resolve();
-      });
+      }
+      return account;
     });
+    this.filteredAccounts = [...this.accounts];
+    this.privacyMode = Boolean(result.privacyMode);
+    this.sortAscending = result.sortAscending !== false;
+    this.currentSort = ['custom', 'name', 'newest', 'usage'].includes(result.currentSort)
+      ? result.currentSort
+      : 'custom';
+    this.loadedProfiles = VaultSync.sanitizeProfileGroups(result.loadedProfiles);
+    this.localUnsynced = Boolean(result.localUnsynced);
+    this.syncError = Boolean(result.syncError);
+    this.syncErrorMessage = typeof result.syncErrorMessage === 'string' ? result.syncErrorMessage : '';
+    this.deletedAccountKeys = VaultSync.normalizeDeletions(result.deletedAccountKeys);
+    this.lastSyncAt = typeof result.lastSyncAt === 'string' ? result.lastSyncAt : '';
+
+    this.resolveProfileEmails();
+    await this.storageSet({
+      [this.storageKey]: this.accounts,
+      deletedAccountKeys: this.deletedAccountKeys,
+      currentSort: this.currentSort
+    });
+    this.updateOrderIcon();
   }
 
   async saveAccounts(isSync = false) {
     if (!isSync && this.ghToken && this.ghRepo) {
-      this.setLocalUnsynced(true);
+      this.localUnsynced = true;
     }
-    return new Promise((resolve) => {
-      chrome.storage.local.set({ [this.storageKey]: this.accounts }, () => resolve());
+
+    await this.storageSet({
+      [this.storageKey]: this.accounts,
+      deletedAccountKeys: this.deletedAccountKeys,
+      localUnsynced: this.localUnsynced
     });
+    this.updateConnectionStatus();
   }
 
   openSettings() {
-    if (this.settingsModal) {
-      this.settingsModal.classList.remove('hidden');
-      this.updateSettingsView();
-    }
+    this.updateSettingsView();
+    this.openDialog(this.settingsModal);
   }
 
   closeSettings() {
-    if (this.settingsModal) {
-      this.settingsModal.classList.add('hidden');
-      this.isEditingConfig = false;
-      this.updateSettingsView();
-    }
+    this.isEditingConfig = false;
+    this.updateSettingsView();
+    this.closeDialog(this.settingsModal);
   }
 
   async openImportModal(mode = 'all') {
-    if (!this.importModal) return;
     this.clearStatus();
-    this.importModal.classList.remove('hidden');
-
+    this.openDialog(this.importModal);
     await this.checkCameraAvailability();
 
-    if (mode === 'all') {
-      if (this.importModalTitle) this.importModalTitle.textContent = 'Add Account';
-      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code or restore from your cloud vault.';
-      if (this.qrInputSection) this.qrInputSection.classList.remove('hidden');
-      if (this.importDivider) this.importDivider.classList.remove('hidden');
-      if (this.githubRestoreSection) this.githubRestoreSection.classList.remove('hidden');
-    } else if (mode === 'add') {
-      if (this.importModalTitle) this.importModalTitle.textContent = 'Add Account';
-      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Scan a QR code to add your 2FA account.';
-      if (this.qrInputSection) this.qrInputSection.classList.remove('hidden');
-      if (this.importDivider) this.importDivider.classList.add('hidden');
-      if (this.githubRestoreSection) this.githubRestoreSection.classList.add('hidden');
-    } else if (mode === 'restore') {
-      if (this.importModalTitle) this.importModalTitle.textContent = 'Restore Cloud Data';
-      if (this.importModalSubtitle) this.importModalSubtitle.textContent = 'Select and restore your profiles from the linked cloud vault.';
-      if (this.qrInputSection) this.qrInputSection.classList.add('hidden');
-      if (this.importDivider) this.importDivider.classList.add('hidden');
-      if (this.githubRestoreSection) this.githubRestoreSection.classList.remove('hidden');
+    if (mode === 'restore') {
+      this.setImportView('restore');
+    } else if (mode === 'manual') {
+      this.setImportView('manual');
+    } else {
+      this.setImportView('scan');
     }
+  }
 
-    if (mode !== 'restore') {
+  setImportView(view) {
+    const validView = ['scan', 'manual', 'restore'].includes(view) ? view : 'scan';
+    this.currentImportView = validView;
+
+    const panels = {
+      scan: this.qrInputSection,
+      manual: this.manualInputSection,
+      restore: this.githubRestoreSection
+    };
+    Object.entries(panels).forEach(([name, panel]) => {
+      if (!panel) return;
+      panel.classList.toggle('hidden', name !== validView);
+    });
+    this.importViewTabs.forEach((tab) => {
+      const active = tab.dataset.importView === validView;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+
+    if (validView === 'scan') {
       if (this.hasCamera) {
-        if (this.qrModeTabs) this.qrModeTabs.classList.remove('hidden');
-        this.switchQRMode('camera');
+        this.qrModeTabs.classList.remove('hidden');
+        this.switchQRMode('file');
       } else {
-        if (this.qrModeTabs) this.qrModeTabs.classList.add('hidden');
+        this.qrModeTabs.classList.add('hidden');
         this.switchQRMode('file');
       }
+    } else {
+      this.stopCamera();
     }
+
+    if (validView === 'manual') {
+      setTimeout(() => this.manualIssuerInput && this.manualIssuerInput.focus(), 0);
+    }
+    this.updateCloudFetchState();
   }
 
   closeImportModal() {
     this.stopCamera();
     this.clearStatus();
-    if (this.importModal) {
-      this.importModal.classList.add('hidden');
-    }
+    if (this.manualForm) this.manualForm.reset();
+    if (this.fileInput) this.fileInput.value = '';
+    if (this.backupFileInput) this.backupFileInput.value = '';
+    this.closeDialog(this.importModal);
   }
 
-  confirmAction(title, message, onConfirm) {
+  confirmAction(title, message, onConfirm, confirmLabel = 'Confirm') {
     if (!this.confirmOverlay) return;
-    this.confirmTitle.innerText = title;
-    this.confirmMessage.innerText = message;
-    this.confirmOverlay.classList.remove('hidden');
+    this.confirmTitle.textContent = title;
+    this.confirmMessage.textContent = message;
+    this.confirmProceedBtn.textContent = confirmLabel;
+    this.openDialog(this.confirmOverlay);
 
     const cleanup = () => {
-      this.confirmOverlay.classList.add('hidden');
+      this.closeDialog(this.confirmOverlay);
       this.confirmCancelBtn.removeEventListener('click', onCancel);
       this.confirmProceedBtn.removeEventListener('click', onProceed);
     };
-
     const onCancel = () => cleanup();
-    const onProceed = () => {
+    const onProceed = async () => {
       cleanup();
-      onConfirm();
+      try {
+        await onConfirm();
+      } catch (error) {
+        this.showToast('The action could not be completed', 'error');
+      }
     };
 
     this.confirmCancelBtn.addEventListener('click', onCancel);
     this.confirmProceedBtn.addEventListener('click', onProceed);
+    this.confirmCancelBtn.focus();
   }
 
   updateOrderIcon() {
     const asc = document.getElementById('order-asc');
     const desc = document.getElementById('order-desc');
     const label = document.getElementById('sort-order-text');
-    const btn = this.sortOrderBtn;
-    if (!asc || !desc) return;
+    if (!asc || !desc || !label) return;
 
-    const isName = this.currentSort === 'name';
-    const isNewest = this.currentSort === 'newest';
-    const isRecent = this.currentSort === 'recent';
-
-    if (this.sortAscending) {
-      asc.classList.remove('hidden');
-      desc.classList.add('hidden');
-      
-      let text = 'ASC';
-      if (isName) text = 'A → Z';
-      else if (isNewest) text = 'Oldest';
-      else if (isRecent) text = 'Least Used';
-
-      if (label) label.textContent = text;
-      if (btn) btn.title = `Current order: Ascending (${text}). Click to switch to Descending.`;
-    } else {
-      asc.classList.add('hidden');
-      desc.classList.remove('hidden');
-
-      let text = 'DESC';
-      if (isName) text = 'Z → A';
-      else if (isNewest) text = 'Newest';
-      else if (isRecent) text = 'Most Used';
-
-      if (label) label.textContent = text;
-      if (btn) btn.title = `Current order: Descending (${text}). Click to switch to Ascending.`;
-    }
+    const labels = {
+      custom: this.sortAscending ? 'First added' : 'Last added',
+      name: this.sortAscending ? 'A to Z' : 'Z to A',
+      newest: this.sortAscending ? 'Oldest' : 'Newest',
+      usage: this.sortAscending ? 'Least used' : 'Most used'
+    };
+    label.textContent = labels[this.currentSort] || labels.custom;
+    asc.classList.toggle('hidden', !this.sortAscending);
+    desc.classList.toggle('hidden', this.sortAscending);
+    this.sortOrderBtn.setAttribute('aria-label', 'Sort direction: ' + label.textContent + '. Activate to reverse.');
+    this.sortOrderBtn.title = 'Sort direction: ' + label.textContent;
   }
 
-
-
   startTimer() {
+    if (this.timerInterval) clearInterval(this.timerInterval);
     this.updateCodes();
-    setInterval(() => this.updateCodes(), 1000);
+    this.timerInterval = setInterval(() => this.updateCodes(), 1000);
   }
 
   updateCodes() {
-    const progress = ((30 - (Math.floor(Date.now() / 1000) % 30)) / 30) * 100;
-    if (this.progressBar) this.progressBar.style.width = `${progress}%`;
-    document.querySelectorAll('.account-item').forEach(item => {
-      const acc = this.accounts.find(a => a.id == item.dataset.id);
-      if (acc && !item.classList.contains('editing')) {
-        const totp = new OTPAuth.TOTP({ secret: acc.secret });
-        const otpEl = item.querySelector('.account-otp');
-        if (otpEl) otpEl.innerText = totp.generate().replace(/(\d{3})/, '$1 ');
+    const standardRemaining = 30 - (Math.floor(Date.now() / 1000) % 30);
+    if (this.globalPeriod) this.globalPeriod.textContent = String(standardRemaining);
+    if (this.globalPeriodRing) {
+      this.globalPeriodRing.style.setProperty('--period-progress', `${(standardRemaining / 30) * 100}%`);
+    }
+
+    document.querySelectorAll('.account-item').forEach((item) => {
+      if (item.classList.contains('editing')) return;
+      const account = this.accounts.find((entry) => String(entry.id) === item.dataset.id);
+      if (!account) return;
+
+      const otpElement = item.querySelector('.account-otp');
+      const timeElement = item.querySelector('.account-time');
+      const secondsElement = item.querySelector('.account-seconds');
+      if (!otpElement) return;
+
+      try {
+        const descriptor = this.getOtpDescriptor(account);
+        const token = this.privacyMode
+          ? '•'.repeat(descriptor.digits)
+          : descriptor.otp.generate();
+        otpElement.textContent = this.formatOtp(token);
+        item.classList.remove('account-invalid');
+
+        if (descriptor.type === 'totp') {
+          const elapsed = Math.floor(Date.now() / 1000) % descriptor.period;
+          const remaining = descriptor.period - elapsed;
+          if (secondsElement) secondsElement.textContent = String(remaining);
+          if (timeElement) {
+            timeElement.style.setProperty('--period-progress', ((remaining / descriptor.period) * 100) + '%');
+            timeElement.setAttribute('aria-label', remaining + ' seconds remaining');
+          }
+        } else {
+          if (secondsElement) secondsElement.textContent = '#' + descriptor.counter;
+          if (timeElement) {
+            timeElement.style.setProperty('--period-progress', '100%');
+            timeElement.setAttribute('aria-label', 'HOTP counter ' + descriptor.counter);
+          }
+        }
+      } catch (error) {
+        otpElement.textContent = 'Invalid';
+        item.classList.add('account-invalid');
+        if (secondsElement) secondsElement.textContent = '—';
       }
     });
   }

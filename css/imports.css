@@ -1,256 +1,240 @@
-/* ==================== Import Modal Specifics ==================== */
-.section-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 16px 0 14px;
+.import-content {
+  width: min(100%, 420px);
 }
 
-.section-divider::before,
-.section-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border-glass);
+.import-view-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3px;
+  margin-bottom: 14px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
 }
 
-.section-divider span {
-  font-size: 0.65rem;
+.import-view-tab {
+  height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
   color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-
-.cloud-fetch-notice {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: hsla(40, 95%, 50%, 0.06);
-  border: 1px solid rgba(245, 158, 11, 0.15);
-  color: var(--warning);
-  font-size: 0.7rem;
-  font-weight: 500;
-  margin-bottom: 12px;
-}
-
-.cloud-fetch-notice svg {
-  flex-shrink: 0;
-}
-
-.link-btn {
-  background: none;
-  border: none;
-  color: var(--primary-light);
+  cursor: pointer;
+  font-size: 10px;
   font-weight: 700;
-  cursor: pointer;
-  text-decoration: underline;
-  font-family: var(--font);
-  font-size: 0.7rem;
-  padding: 0;
-  transition: color var(--transition-fast) ease;
+  transition: background 160ms ease, color 160ms ease, transform 100ms ease;
 }
 
-.link-btn:hover {
-  color: var(--accent);
+.import-view-tab:hover {
+  color: var(--text-soft);
 }
 
-/* Drop Zone */
-.drop-zone {
-  border: 2px dashed var(--border-glass);
-  border-radius: var(--radius-lg);
-  padding: 24px 16px;
-  text-align: center;
-  cursor: pointer;
-  transition: all var(--transition-slow) var(--spring-curve);
-  background: rgba(255, 255, 255, 0.01);
+.import-view-tab:active {
+  transform: scale(0.98);
 }
 
-.drop-zone:hover, .drop-zone.dragover {
-  border-color: var(--primary);
-  background: hsla(250, 85%, 65%, 0.04);
-  transform: scale(1.02);
+.import-view-tab.active {
+  background: var(--surface-strong);
+  color: var(--text);
 }
 
-.drop-zone-icon {
-  color: var(--primary-light);
-  margin-bottom: 8px;
-  transition: transform var(--transition-slow) var(--spring-curve);
+.import-panel {
+  animation: item-enter 220ms var(--ease-out);
 }
 
-.drop-zone:hover .drop-zone-icon {
-  transform: translateY(-2px) scale(1.1);
-}
-
-.drop-zone p {
-  font-size: 0.75rem;
-  margin-bottom: 0;
-}
-
-/* ==================== Cloud Accounts Preview List ==================== */
-.cloud-accounts-container {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 180px;
-  overflow-y: auto;
-  padding-right: 4px;
-  margin-bottom: 12px;
-}
-
-.cloud-account-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: all var(--transition-fast) var(--spring-curve);
-  user-select: none;
-}
-
-.cloud-account-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: var(--border-bright);
-}
-
-.cloud-account-item.active {
-  background: hsla(250, 85%, 65%, 0.15);
-  border-color: var(--primary);
-  box-shadow: 0 0 10px var(--primary-glow);
-}
-
-.cloud-account-checkbox {
-  flex-shrink: 0;
-  width: 15px;
-  height: 15px;
-  border-radius: 4px;
-  border: 1.5px solid var(--text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: transparent;
-  transition: all var(--transition-fast) ease;
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.cloud-account-item.active .cloud-account-checkbox {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-}
-
-.cloud-account-checkbox svg {
-  stroke-width: 3px;
-  width: 10px;
-  height: 10px;
-}
-
-.cloud-account-item .brand-icon {
-  width: 16px;
-  height: 16px;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-
-.cloud-account-item.active .brand-icon {
-  color: var(--primary);
-}
-
-.cloud-account-details {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  flex: 1;
-  text-align: left;
-}
-
-.cloud-account-name {
-  font-size: 0.76rem;
-  font-weight: 700;
-  color: var(--text-main);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cloud-account-label {
-  font-size: 0.65rem;
-  color: var(--text-dim);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ==================== QR Mode Tabs & Camera Scanner ==================== */
 .qr-mode-tabs {
   display: flex;
-  background: rgba(255, 255, 255, 0.04);
-  padding: 3px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-glass);
-  margin-bottom: 12px;
-  gap: 4px;
+  gap: 6px;
+  margin-bottom: 9px;
 }
 
 .qr-mode-tab {
-  flex: 1;
   display: flex;
+  height: 29px;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: none;
-  background: transparent;
-  color: var(--text-dim);
-  font-size: 0.72rem;
-  font-weight: 600;
-  border-radius: var(--radius-sm);
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
   cursor: pointer;
-  font-family: var(--font);
-  transition: all var(--transition-fast) ease;
+  font-size: 9px;
+  font-weight: 650;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
 
 .qr-mode-tab:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--line-strong);
+  color: var(--text-soft);
 }
 
 .qr-mode-tab.active {
-  background: var(--primary);
-  color: white;
-  box-shadow: 0 2px 8px var(--primary-glow);
+  border-color: rgba(182, 202, 132, 0.25);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.drop-zone,
+.backup-drop-zone {
+  width: 100%;
+  border: 1px dashed rgba(182, 202, 132, 0.3);
+  background: rgba(182, 202, 132, 0.025);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms var(--ease-out);
+}
+
+.drop-zone {
+  display: flex;
+  min-height: 168px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  border-radius: 16px;
+  padding: 22px;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover,
+.backup-drop-zone:hover,
+.backup-drop-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.drop-zone-icon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  margin-bottom: 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.drop-zone-title {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.drop-zone-meta {
+  margin-top: 5px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 11px;
+}
+
+.field > span {
+  color: var(--text-soft);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.field input,
+.field select,
+.camera-select {
+  width: 100%;
+  height: 37px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  appearance: none;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-size: 11px;
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.field select,
+.camera-select {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 15px,
+    calc(100% - 10px) 15px;
+  background-repeat: no-repeat;
+  background-size: 4px 4px, 4px 4px;
+}
+
+.field input:hover,
+.field select:hover,
+.camera-select:hover {
+  border-color: var(--line-strong);
+  background-color: var(--surface);
+}
+
+.field input:focus,
+.field select:focus,
+.camera-select:focus {
+  border-color: rgba(182, 202, 132, 0.5);
+  background-color: var(--surface);
+  box-shadow: 0 0 0 3px rgba(182, 202, 132, 0.08);
+}
+
+.field input::placeholder {
+  color: var(--text-muted);
+}
+
+.field small {
+  color: var(--text-muted);
+  font-size: 8.5px;
+  line-height: 1.4;
+}
+
+.secret-input {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.field-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.field-grid.two-column {
+  grid-template-columns: 0.78fr 1.22fr;
+}
+
+.field-grid.three-column {
+  grid-template-columns: 1.3fr 0.75fr 0.9fr;
+}
+
+#manual-add-btn {
+  width: 100%;
+  margin-top: 2px;
 }
 
 .camera-zone {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  padding: 12px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-soft);
 }
 
 .camera-wrapper {
   position: relative;
-  width: 100%;
-  max-width: 240px;
-  height: 170px;
-  border-radius: var(--radius-md);
+  height: 205px;
   overflow: hidden;
-  background: #000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: inset 0 0 15px rgba(0,0,0,0.8);
+  border-radius: 11px;
+  background: #050706;
 }
 
 #camera-stream {
@@ -263,118 +247,323 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-/* Reticle corner brackets */
 .scan-corner {
   position: absolute;
-  width: 20px;
-  height: 20px;
-  border-color: var(--primary-light);
+  width: 24px;
+  height: 24px;
+  border-color: var(--accent);
   border-style: solid;
-  border-width: 0;
 }
 
-.scan-corner.top-left {
-  top: 20px;
-  left: 25px;
-  border-top-width: 2.5px;
-  border-left-width: 2.5px;
-  border-top-left-radius: 4px;
-}
+.scan-corner.top-left { top: 20px; left: 26px; border-width: 2px 0 0 2px; }
+.scan-corner.top-right { top: 20px; right: 26px; border-width: 2px 2px 0 0; }
+.scan-corner.bottom-left { bottom: 20px; left: 26px; border-width: 0 0 2px 2px; }
+.scan-corner.bottom-right { right: 26px; bottom: 20px; border-width: 0 2px 2px 0; }
 
-.scan-corner.top-right {
-  top: 20px;
-  right: 25px;
-  border-top-width: 2.5px;
-  border-right-width: 2.5px;
-  border-top-right-radius: 4px;
-}
-
-.scan-corner.bottom-left {
-  bottom: 20px;
-  left: 25px;
-  border-bottom-width: 2.5px;
-  border-left-width: 2.5px;
-  border-bottom-left-radius: 4px;
-}
-
-.scan-corner.bottom-right {
-  bottom: 20px;
-  right: 25px;
-  border-bottom-width: 2.5px;
-  border-right-width: 2.5px;
-  border-bottom-right-radius: 4px;
-}
-
-/* Animated laser line */
 .scan-line {
   position: absolute;
-  left: 25px;
-  right: 25px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--primary-light), transparent);
-  box-shadow: 0 0 8px var(--primary-light);
-  animation: scanLine 2s infinite ease-in-out;
+  right: 28px;
+  left: 28px;
+  height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(182, 202, 132, 0.55);
+  animation: scan-line 2.3s ease-in-out infinite;
 }
 
-@keyframes scanLine {
-  0% { top: 20px; opacity: 0.3; }
-  50% { top: calc(100% - 22px); opacity: 1; }
-  100% { top: 20px; opacity: 0.3; }
+@keyframes scan-line {
+  0%,
+  100% { top: 24px; opacity: 0.35; }
+  50% { top: calc(100% - 24px); opacity: 1; }
 }
 
 .camera-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-  padding: 0 4px;
+  gap: 10px;
+  padding-top: 9px;
 }
 
 .camera-select {
-  background: var(--bg-card);
-  border: 1px solid var(--border-glass);
-  color: var(--text-main);
-  font-size: 0.68rem;
-  padding: 4px 8px;
-  border-radius: var(--radius-sm);
-  outline: none;
-  font-family: var(--font);
-  max-width: 130px;
+  width: auto;
+  max-width: 170px;
+  height: 31px;
+  font-size: 9px;
 }
 
 .camera-permission-notice {
   display: flex;
-  flex-direction: column;
+  min-height: 180px;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
+  color: var(--accent);
   text-align: center;
-  padding: 16px 12px;
-  width: 100%;
 }
 
-.camera-permission-notice .perm-icon {
-  color: var(--primary-light);
-  margin-bottom: 8px;
-  opacity: 0.9;
+.camera-permission-notice h3 {
+  margin-top: 10px;
+  color: var(--text);
+  font-size: 13px;
 }
 
 .camera-permission-notice p {
-  font-size: 0.76rem;
+  max-width: 250px;
+  margin: 5px 0 12px;
   color: var(--text-dim);
-  margin-bottom: 12px;
+  font-size: 9px;
 }
 
-.camera-active-view {
+.restore-block {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: var(--surface-soft);
+}
+
+.section-heading {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.section-heading h3 {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.section-heading .section-kicker {
+  margin-bottom: 3px;
+}
+
+.compact-heading {
+  margin: 12px 0 7px;
+}
+
+.compact-heading h3 {
+  font-size: 10px;
+}
+
+.plain-badge,
+.selection-count {
+  color: var(--text-muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.backup-drop-zone {
+  display: grid;
+  min-height: 48px;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  border-radius: 9px;
+  color: var(--text-dim);
+  text-align: left;
+}
+
+.backup-drop-zone > span {
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.backup-drop-zone small {
+  color: var(--text-muted);
+  font-size: 8px;
+}
+
+.section-divider {
+  display: flex;
   align-items: center;
   gap: 10px;
+  margin: 13px 0;
+}
+
+.section-divider::before,
+.section-divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--line);
+  content: "";
+}
+
+.section-divider span {
+  color: var(--text-muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cloud-fetch-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+  padding: 8px 9px;
+  border: 1px solid rgba(211, 173, 112, 0.24);
+  border-radius: 8px;
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 9px;
+}
+
+#fetch-github-btn {
   width: 100%;
 }
 
+.github-profiles-list,
+.cloud-accounts-container {
+  display: flex;
+  max-height: 150px;
+  flex-direction: column;
+  gap: 5px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
 
+.profile-row,
+.cloud-account-item {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.profile-row:hover,
+.cloud-account-item:hover {
+  border-color: var(--line-strong);
+  background: var(--surface-hover);
+}
+
+.profile-row.active,
+.cloud-account-item.active {
+  border-color: rgba(182, 202, 132, 0.35);
+  background: var(--accent-soft);
+}
+
+.profile-avatar,
+.cloud-account-checkbox {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.profile-copy,
+.cloud-account-details {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.profile-email,
+.cloud-account-name {
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-count,
+.cloud-account-label {
+  overflow: hidden;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selection-check {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  flex: none;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  color: transparent;
+}
+
+.profile-row.active .selection-check,
+.cloud-account-item.active .cloud-account-checkbox {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.cloud-account-icon {
+  width: 27px;
+  height: 27px;
+  border-radius: 8px;
+}
+
+.cloud-account-icon .brand-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.cloud-account-checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  color: transparent;
+}
+
+.restore-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.github-accounts-preview {
+  margin-top: 10px;
+  padding-top: 1px;
+  border-top: 1px solid var(--line);
+}
+
+.cloud-list-empty {
+  padding: 15px 8px;
+  color: var(--text-muted);
+  font-size: 9px;
+  text-align: center;
+}
+
+@media (max-width: 430px) {
+  .field-grid.two-column,
+  .field-grid.three-column {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,61 +1,80 @@
-/* ==================== Sorting Chips ==================== */
 .sort-container {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 9px;
 }
 
 .sort-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-soft);
 }
 
 .sort-chip {
-  background: var(--bg-card);
-  border: 1px solid var(--border-glass);
-  color: var(--text-dim);
-  padding: 5px 10px;
-  border-radius: var(--radius-full);
-  font-size: 0.68rem;
-  font-weight: 600;
-  font-family: var(--font);
+  min-width: 0;
+  height: 27px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
-  transition: all var(--transition-fast) var(--spring-curve);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 10px;
+  font-weight: 650;
+  transition:
+    background 160ms var(--ease-standard),
+    color 160ms var(--ease-standard),
+    transform 100ms ease;
 }
 
 .sort-chip:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  transform: translateY(-1px);
+  color: var(--text-soft);
 }
 
 .sort-chip:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
 }
 
 .sort-chip.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-  box-shadow: 0 2px 10px var(--primary-glow);
+  background: var(--surface-strong);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.035);
 }
 
-#sort-order-btn {
-  padding: 5px 9px;
-  gap: 4px;
-  flex-shrink: 0;
+.sort-order-button {
+  display: flex;
+  height: 29px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 0 7px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 650;
   white-space: nowrap;
+  transition: color 160ms ease;
 }
 
-#sort-order-text {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+.sort-order-button:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 410px) {
+  .sort-chip {
+    padding-inline: 7px;
+  }
+
+  .sort-order-button span {
+    display: none;
+  }
 }

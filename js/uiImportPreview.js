@@ -1,132 +1,134 @@
-/* global AuthenticatorApp */
+/* global AuthenticatorApp, VaultSync */
+
+AuthenticatorApp.prototype.updateProfileSelectionCount = function() {
+  const counter = document.getElementById('profile-selection-count');
+  if (counter) counter.textContent = this.selectedProfileEmails.size + ' selected';
+};
 
 AuthenticatorApp.prototype.renderProfileSelection = function() {
   const container = document.getElementById('github-profiles-list');
-  if (!container) return;
+  const section = document.getElementById('profile-selection-list');
+  if (!container || !section) return;
+
   container.innerHTML = '';
-  document.getElementById('profile-selection-list').classList.remove('hidden');
+  section.classList.remove('hidden');
   this.loadedProfiles.forEach((profile) => {
-    const row = document.createElement('div');
-    row.className = 'sort-chip';
-    row.style.width = '100%'; row.style.borderRadius = '8px';
-    row.style.display = 'flex'; row.style.justifyContent = 'space-between';
-    row.style.padding = '8px 12px'; row.style.marginBottom = '4px';
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'profile-row';
+    const active = this.selectedProfileEmails.has(profile.email);
+    row.classList.toggle('active', active);
+    row.setAttribute('aria-pressed', String(active));
+    row.innerHTML = [
+      '<span class="profile-avatar" aria-hidden="true">' + this.escapeHtml((profile.email || '?').charAt(0).toUpperCase()) + '</span>',
+      '<span class="profile-copy">',
+      '<span class="profile-email">' + this.escapeHtml(profile.email || 'Unknown profile') + '</span>',
+      '<span class="profile-count">' + (Array.isArray(profile.accounts) ? profile.accounts.length : 0) + ' accounts</span>',
+      '</span>',
+      '<span class="selection-check" aria-hidden="true">',
+      '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m5 12 4 4 10-10"/></svg>',
+      '</span>'
+    ].join('');
 
-    if (this.selectedProfileEmails.has(profile.email)) {
-      row.classList.add('active');
-    }
-
-    row.innerHTML = `<span style="font-size: 0.75rem">${profile.email}</span><span style="font-size: 0.6rem; opacity: 0.6">${profile.accounts.length} items</span>`;
-    
-    row.onclick = () => {
+    row.addEventListener('click', () => {
       if (this.selectedProfileEmails.has(profile.email)) {
         this.selectedProfileEmails.delete(profile.email);
-        row.classList.remove('active');
       } else {
         this.selectedProfileEmails.add(profile.email);
-        row.classList.add('active');
       }
+      const selected = this.selectedProfileEmails.has(profile.email);
+      row.classList.toggle('active', selected);
+      row.setAttribute('aria-pressed', String(selected));
+      this.updateProfileSelectionCount();
       this.updateCombinedAccounts();
-    };
+    });
     container.appendChild(row);
   });
+  this.updateProfileSelectionCount();
 };
 
 AuthenticatorApp.prototype.updateCombinedAccounts = function() {
   const combinedAccounts = [];
-  const addedSecrets = new Set();
-  
-  this.loadedProfiles.forEach(profile => {
-    if (this.selectedProfileEmails.has(profile.email)) {
-      profile.accounts.forEach(acc => {
-        if (acc && acc.secret && !addedSecrets.has(acc.secret)) {
-          addedSecrets.add(acc.secret);
-          combinedAccounts.push(acc);
-        }
-      });
-    }
+  const addedKeys = new Set();
+
+  this.loadedProfiles.forEach((profile) => {
+    if (!this.selectedProfileEmails.has(profile.email) || !Array.isArray(profile.accounts)) return;
+    profile.accounts.forEach((account) => {
+      const key = VaultSync.accountKey(account);
+      if (!key || addedKeys.has(key)) return;
+      addedKeys.add(key);
+      combinedAccounts.push(account);
+    });
   });
 
   this.currentCloudAccounts = combinedAccounts;
-
-  // By default, select all combined accounts
-  this.selectedAccountSecrets.clear();
-  combinedAccounts.forEach(acc => this.selectedAccountSecrets.add(acc.secret));
-
-  const previewContainer = document.getElementById('github-accounts-preview');
-  if (combinedAccounts.length === 0) {
-    if (previewContainer) previewContainer.classList.add('hidden');
-  } else {
-    if (previewContainer) previewContainer.classList.remove('hidden');
-    this.filterAndRenderCloudAccounts();
-  }
+  this.selectedAccountSecrets = new Set(combinedAccounts.map((account) => VaultSync.accountKey(account)));
+  const preview = document.getElementById('github-accounts-preview');
+  if (preview) preview.classList.toggle('hidden', combinedAccounts.length === 0);
+  if (combinedAccounts.length > 0) this.filterAndRenderCloudAccounts();
 };
 
 AuthenticatorApp.prototype.filterAndRenderCloudAccounts = function() {
-  const term = this.cloudAccountsSearchInput ? this.cloudAccountsSearchInput.value.toLowerCase().trim() : '';
-  const filtered = this.currentCloudAccounts.filter(acc => {
-    const issuer = (acc.issuer || '').toLowerCase();
-    const label = (acc.label || '').toLowerCase();
-    return issuer.includes(term) || label.includes(term);
+  const term = this.cloudAccountsSearchInput
+    ? this.cloudAccountsSearchInput.value.toLocaleLowerCase().trim()
+    : '';
+  const filtered = this.currentCloudAccounts.filter((account) => {
+    return String(account.issuer || '').toLocaleLowerCase().includes(term)
+      || String(account.label || '').toLocaleLowerCase().includes(term);
   });
   this.renderAccountPreview(filtered);
 };
 
 AuthenticatorApp.prototype.renderAccountPreview = function(accounts) {
   const container = document.getElementById('github-accounts-list');
+  const title = document.getElementById('preview-title');
   if (!container) return;
+
   container.innerHTML = '';
-  
-  // Update heading to show selection count
-  const previewTitle = document.getElementById('preview-title');
-  if (previewTitle) {
-    previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${this.currentCloudAccounts.length}):`;
+  if (title) {
+    title.textContent = 'Accounts · ' + this.selectedAccountSecrets.size + ' of ' + this.currentCloudAccounts.length + ' selected';
   }
 
   if (accounts.length === 0) {
-    const emptyDiv = document.createElement('div');
-    emptyDiv.style.textAlign = 'center';
-    emptyDiv.style.padding = '20px';
-    emptyDiv.style.color = 'var(--text-dim)';
-    emptyDiv.style.fontSize = '0.75rem';
-    emptyDiv.innerText = 'No matching cloud accounts';
-    container.appendChild(emptyDiv);
+    const empty = document.createElement('p');
+    empty.className = 'cloud-list-empty';
+    empty.textContent = 'No cloud accounts match this search.';
+    container.appendChild(empty);
     return;
   }
 
-  accounts.forEach(acc => {
-    const itemEl = document.createElement('div');
-    itemEl.className = 'cloud-account-item';
-    
-    const isActive = this.selectedAccountSecrets.has(acc.secret);
-    if (isActive) {
-      itemEl.classList.add('active');
-    }
+  accounts.forEach((account) => {
+    const key = VaultSync.accountKey(account);
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'cloud-account-item';
+    const active = this.selectedAccountSecrets.has(key);
+    row.classList.toggle('active', active);
+    row.setAttribute('aria-pressed', String(active));
+    row.innerHTML = [
+      '<span class="cloud-account-checkbox" aria-hidden="true">',
+      '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="m5 12 4 4 10-10"/></svg>',
+      '</span>',
+      '<span class="cloud-account-icon">' + this.getIssuerIcon(account.issuer) + '</span>',
+      '<span class="cloud-account-details">',
+      '<span class="cloud-account-name">' + this.escapeHtml(account.issuer || 'Unknown') + '</span>',
+      '<span class="cloud-account-label">' + this.escapeHtml(account.label || 'Account') + '</span>',
+      '</span>'
+    ].join('');
 
-    itemEl.innerHTML = `
-      <div class="cloud-account-checkbox">
-        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-      </div>
-      ${this.getIssuerIcon(acc.issuer)}
-      <div class="cloud-account-details">
-        <span class="cloud-account-name">${this.escapeHtml(acc.issuer || 'Unknown')}</span>
-        <span class="cloud-account-label">${this.escapeHtml(acc.label || '')}</span>
-      </div>
-    `;
-
-    itemEl.onclick = () => {
-      if (this.selectedAccountSecrets.has(acc.secret)) {
-        this.selectedAccountSecrets.delete(acc.secret);
-        itemEl.classList.remove('active');
+    row.addEventListener('click', () => {
+      if (this.selectedAccountSecrets.has(key)) {
+        this.selectedAccountSecrets.delete(key);
       } else {
-        this.selectedAccountSecrets.add(acc.secret);
-        itemEl.classList.add('active');
+        this.selectedAccountSecrets.add(key);
       }
-      if (previewTitle) {
-        previewTitle.textContent = `Select accounts to import (${this.selectedAccountSecrets.size} of ${this.currentCloudAccounts.length}):`;
+      const selected = this.selectedAccountSecrets.has(key);
+      row.classList.toggle('active', selected);
+      row.setAttribute('aria-pressed', String(selected));
+      if (title) {
+        title.textContent = 'Accounts · ' + this.selectedAccountSecrets.size + ' of ' + this.currentCloudAccounts.length + ' selected';
       }
-    };
-    
-    container.appendChild(itemEl);
+    });
+    container.appendChild(row);
   });
 };

@@ -1,323 +1,367 @@
-/* ==================== Account List ==================== */
 .account-list {
-  padding: 12px 20px 20px;
-  flex-grow: 1;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  overflow-x: hidden;
   overflow-y: auto;
-  z-index: 10;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  padding: 3px 18px 14px;
+  scroll-padding-block: 8px;
 }
 
-/* ==================== Account Card ==================== */
 .account-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border-glass);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0;
-  min-height: 74px;
-  flex-shrink: 0;
-  transition: min-height 0.25s var(--spring-curve), transform var(--transition-slow) var(--spring-curve), border-color var(--transition-fast) ease, background-color var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
-  cursor: default;
   position: relative;
+  flex: none;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  animation: paneEnter var(--transition-slow) var(--spring-curve) backwards;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line), var(--shadow-small);
+  animation: item-enter 360ms var(--ease-out) both;
+  animation-delay: var(--item-delay, 0ms);
+  transition:
+    background 190ms var(--ease-standard),
+    box-shadow 190ms var(--ease-standard),
+    transform 190ms var(--ease-out);
 }
 
-.account-item:hover {
-  border-color: var(--primary);
-  background-color: var(--bg-card-hover);
-  transform: translateX(4px);
-  box-shadow: var(--shadow-premium), 0 4px 15px -3px var(--primary-glow);
-  min-height: 98px;
+.account-item::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: var(--accent);
+  content: "";
+  opacity: 0;
+  transition: opacity 180ms ease;
 }
 
+.account-item:hover,
+.account-item:focus-within,
 .account-item.details-expanded {
-  min-height: 180px;
+  background: var(--surface-strong);
+  box-shadow: inset 0 0 0 1px var(--line-strong), 0 12px 30px rgba(1, 5, 3, 0.28);
+  transform: translateY(-1px);
 }
 
-.account-item.details-expanded:hover {
-  min-height: 204px;
+.account-item:hover::before,
+.account-item:focus-within::before,
+.account-item.details-expanded::before {
+  opacity: 1;
 }
 
-.account-index {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-dim);
-  opacity: 0.35;
-  min-width: 22px;
-  text-align: right;
-  margin-right: 4px;
-  font-family: monospace;
-  align-self: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  transition: all var(--transition-fast) ease;
-}
-
-.account-index:hover {
-  opacity: 0.9;
-  color: var(--primary-light);
-  transform: scale(1.1);
-}
-
-.account-index:active {
-  transform: scale(0.9);
-}
-
-.account-item.editing .account-index {
-  margin-top: 13px;
+.account-item.copied-pulse {
+  animation: copy-pulse 420ms var(--ease-out);
 }
 
 .account-card-main {
-  display: flex;
+  display: grid;
+  min-height: 76px;
+  grid-template-columns: 31px 40px minmax(76px, 1fr) minmax(100px, auto) 34px;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 16px 20px;
-  box-sizing: border-box;
-  position: relative;
-  height: 74px;
-  transition: height 0.25s var(--spring-curve);
+  gap: 9px;
+  padding: 10px 11px 7px;
 }
 
-.account-item:hover .account-card-main {
-  height: 98px;
+.account-index {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
-.account-icon-wrapper {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border-glass);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+button.account-index {
+  cursor: copy;
+  transition: background 150ms ease, color 150ms ease, transform 110ms ease;
+}
+
+button.account-index:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+button.account-index:active {
+  transform: scale(0.94);
+}
+
+.account-icon-wrapper,
+.cloud-account-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
   color: var(--text-dim);
-  flex-shrink: 0;
-  transition: all var(--transition-fast) var(--spring-curve);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
 }
 
-.account-item:hover .account-icon-wrapper {
-  background: hsla(250, 85%, 65%, 0.1);
-  border-color: var(--primary);
-  color: var(--primary-light);
-  transform: scale(1.08) rotate(-4deg);
+.account-icon-wrapper .brand-icon {
+  width: 18px;
+  height: 18px;
 }
 
-.brand-icon {
-  width: 16px;
-  height: 16px;
-  transition: transform var(--transition-fast) var(--spring-curve);
-}
-
-.account-item:hover .brand-icon {
-  transform: scale(1.1);
-}
-
-/* Click/Copy custom spring feedback */
-.account-item.copied-pulse {
-  animation: cardCopyFeedback 0.4s var(--spring-curve) forwards;
+.brand-monogram {
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .account-info {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
   min-width: 0;
-  padding-right: 110px;
-  transition: padding-right 0.25s var(--spring-curve);
+  flex-direction: column;
 }
 
-.account-item:hover .account-info {
-  padding-right: 140px;
-}
-
+.account-issuer,
 .account-label {
-  font-size: 0.65rem;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 700;
-  white-space: nowrap;
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: filter 160ms ease;
 }
 
 .account-issuer {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: white;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color var(--transition-fast) ease;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
 }
 
-.account-item:hover .account-issuer {
-  color: var(--primary-light);
+.account-label {
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.account-otp-button {
+  display: flex;
+  min-width: 100px;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 4px 5px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: copy;
+}
+
+.account-otp-button:hover {
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .account-otp {
-  font-size: 1.45rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  background: linear-gradient(135deg, #ffffff 40%, var(--primary-light) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 18px;
   font-variant-numeric: tabular-nums;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.08));
-  flex-shrink: 0;
-  position: absolute;
-  right: 20px;
-  top: 23px;
-  transition: all var(--transition-fast) var(--spring-curve);
-  z-index: 5;
-  cursor: pointer;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  transition: color 160ms ease, filter 160ms ease;
+  white-space: nowrap;
 }
 
-.account-otp:hover {
-  filter: drop-shadow(0 0 12px var(--primary-glow)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+.account-otp-button:hover .account-otp {
+  color: var(--accent-strong);
 }
 
-.account-otp:active {
-  transform: scale(0.95);
-}
-
-.account-item:hover .account-otp {
-  transform: translateY(39px);
-}
-
-.account-item:hover .account-otp:active {
-  transform: translateY(39px) scale(0.95);
-}
-
-/* ==================== Account Card Actions ==================== */
-.account-actions {
-  position: absolute;
-  top: 37px;
-  right: 20px;
-  transform: translateY(-50%) translateX(12px);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.copy-hint {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  text-transform: uppercase;
   opacity: 0;
-  transition: opacity var(--transition-fast) ease, transform var(--transition-fast) var(--spring-curve);
-  pointer-events: none;
-  z-index: 10;
+  transform: translateY(2px);
+  transition: opacity 150ms ease, transform 150ms ease;
 }
 
-.account-item:hover .account-actions {
+.account-otp-button:hover .copy-hint,
+.account-otp-button:focus-visible .copy-hint {
   opacity: 1;
-  transform: translateY(-50%) translateX(0);
-  pointer-events: auto;
+  transform: translateY(0);
 }
 
-.account-actions button {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-glass);
-  background: var(--bg-card);
+.account-time {
+  --period-progress: 100%;
+  position: relative;
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(var(--accent) var(--period-progress), var(--line) 0);
   color: var(--text-dim);
+}
+
+.account-time::before {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--surface);
+  content: "";
+  transition: background 180ms ease;
+}
+
+.account-item:hover .account-time::before,
+.account-item:focus-within .account-time::before,
+.account-item.details-expanded .account-time::before {
+  background: var(--surface-strong);
+}
+
+.account-seconds {
+  position: relative;
+  z-index: 1;
+  max-width: 26px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-actions {
   display: flex;
+  min-height: 31px;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-fast) var(--spring-curve);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  justify-content: flex-end;
+  gap: 1px;
+  margin: 0 10px;
+  padding: 3px 0 6px;
+  border-top: 1px solid rgba(224, 234, 225, 0.07);
 }
 
-.account-actions button:hover {
-  transform: scale(1.1) translateY(-1px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+.account-actions .action-info {
+  margin-right: auto;
 }
 
-.account-actions button:active {
-  transform: scale(0.92);
-}
-
-.account-actions .action-copy:hover {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.account-actions .action-info:hover {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
-.account-actions .action-edit:hover {
-  background: var(--warning);
-  color: white;
-  border-color: var(--warning);
-}
-
-.account-actions .action-delete:hover {
-  background: var(--danger);
-  color: white;
-  border-color: var(--danger);
-}
-
-/* ==================== Account Details Drawer ==================== */
 .account-card-details {
-  border-top: 1px solid var(--border-glass);
-  padding: 12px 20px;
-  background: rgba(0, 0, 0, 0.15);
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: detailsSlideDown 0.25s var(--spring-curve) forwards;
-}
-
-@keyframes detailsSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  padding: 0 11px 11px;
+  animation: item-enter 220ms var(--ease-out);
 }
 
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft);
 }
 
 .details-item {
   display: flex;
+  min-width: 0;
+  min-height: 45px;
   flex-direction: column;
-  gap: 1px;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 10px;
+}
+
+.details-item:nth-child(even) {
+  border-left: 1px solid var(--line);
+}
+
+.details-item:nth-child(n + 3) {
+  border-top: 1px solid var(--line);
+}
+
+.details-wide {
+  grid-column: 1 / -1;
+  border-left: 0 !important;
 }
 
 .details-label {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--text-dim);
-  opacity: 0.5;
+  color: var(--text-muted);
+  font-size: 8px;
   font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.1;
+  text-transform: uppercase;
 }
 
 .details-value {
-  color: white;
-  font-weight: 500;
-  font-size: 0.72rem;
-  font-family: monospace;
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.spec-value {
+  font-family: var(--font-mono);
+  font-size: 9px;
+}
+
+.details-profile {
+  color: var(--text-dim);
+  white-space: normal;
+  word-break: break-word;
+}
+
+.account-invalid .account-otp {
+  color: var(--danger);
+  font-family: var(--font);
+  font-size: 12px;
+}
+
+.account-invalid .account-time {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+@media (min-width: 620px) {
+  .account-list {
+    padding-inline: 22px;
+  }
+
+  .account-card-main {
+    grid-template-columns: 34px 42px minmax(120px, 1fr) minmax(150px, auto) 36px;
+    padding-inline: 14px;
+  }
+
+  .account-otp {
+    font-size: 20px;
+  }
+
+  .details-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .details-item:nth-child(n) {
+    border-top: 0;
+  }
+
+  .details-item + .details-item {
+    border-left: 1px solid var(--line);
+  }
+
+  .details-wide {
+    grid-column: span 2;
+    border-top: 1px solid var(--line) !important;
+  }
 }

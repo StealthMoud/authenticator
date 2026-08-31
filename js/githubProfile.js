@@ -1,125 +1,97 @@
-/* global AuthenticatorApp */
+/* global AuthenticatorApp, VaultSync */
 
 AuthenticatorApp.prototype.resolveProfileEmails = function() {
-  if (!this.loadedProfiles || this.loadedProfiles.length === 0) return false;
+  if (!Array.isArray(this.loadedProfiles) || this.loadedProfiles.length === 0) {
+    let cleared = false;
+    this.accounts.forEach((account) => {
+      if (account.profile) {
+        delete account.profile;
+        cleared = true;
+      }
+    });
+    return cleared;
+  }
   let modified = false;
-  this.accounts.forEach(acc => {
-    if (!acc.secret) return;
-    const cleanSecret = acc.secret.replace(/\s/g, '').toUpperCase();
+
+  this.accounts.forEach((account) => {
+    const key = VaultSync.accountKey(account);
     const matchingProfiles = this.loadedProfiles
-      .filter(p => p.accounts && p.accounts.some(remoteAcc => 
-        remoteAcc.secret && remoteAcc.secret.replace(/\s/g, '').toUpperCase() === cleanSecret
-      ))
-      .map(p => p.email);
-    
-    if (matchingProfiles.length > 0) {
-      const profileStr = matchingProfiles.join(', ');
-      if (acc.profile !== profileStr) {
-        acc.profile = profileStr;
-        modified = true;
-      }
-    } else {
-      if (acc.profile) {
-        acc.profile = '';
-        modified = true;
-      }
+      .filter((profile) => Array.isArray(profile.accounts) && profile.accounts.some((remoteAccount) => {
+        return VaultSync.accountKey(remoteAccount) === key;
+      }))
+      .map((profile) => profile.email)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+    const profileText = matchingProfiles.join(', ');
+
+    if ((account.profile || '') !== profileText) {
+      account.profile = profileText;
+      modified = true;
     }
   });
+
   return modified;
 };
 
-AuthenticatorApp.prototype.silentFetchAndResolveProfiles = async function() {
-  if (!this.ghToken || !this.ghRepo) return;
-  const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles/common.json`;
-  try {
-    const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
-    if (res.ok) {
-      const fileJson = await res.json();
-      if (fileJson && fileJson.content) {
-        const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
-        const commonData = JSON.parse(decoded);
-        const profileMap = new Map();
-        if (commonData && Array.isArray(commonData.accounts)) {
-          commonData.accounts.forEach(acc => {
-            if (acc.profiles && Array.isArray(acc.profiles)) {
-              acc.profiles.forEach(email => {
-                if (!profileMap.has(email)) {
-                  profileMap.set(email, { email, accounts: [] });
-                }
-                profileMap.get(email).accounts.push(acc);
-              });
-            }
-          });
-        }
-        this.loadedProfiles = Array.from(profileMap.values());
-        chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
-        if (this.resolveProfileEmails()) {
-          this.saveAccounts(true);
-          this.render();
-        }
-      }
-    }
-  } catch (e) {
-    console.error('Silent profile fetch failed:', e);
+AuthenticatorApp.prototype.applyFetchedProfiles = async function(response, silent = false) {
+  if (!response || !response.success) {
+    const reason = response && response.error ? response.error : 'Cloud vault could not be loaded';
+    if (!silent) this.showToast(reason, 'error');
+    return false;
   }
+
+  this.loadedProfiles = VaultSync.sanitizeProfileGroups(response.profiles);
+  this.currentEmail = response.profile || this.currentEmail;
+  this.resolveProfileEmails();
+  await this.storageSet({
+    loadedProfiles: this.loadedProfiles,
+    [this.storageKey]: this.accounts
+  });
+  this.render();
+  return true;
+};
+
+AuthenticatorApp.prototype.silentFetchAndResolveProfiles = async function() {
+  if (!this.ghToken || !this.ghRepo || !this.githubPermissionGranted) return false;
+  const response = await this.sendRuntimeMessage({ action: 'vault:fetch' });
+  return this.applyFetchedProfiles(response, true);
 };
 
 AuthenticatorApp.prototype.fetchFromGithub = async function() {
-  if (!this.ghToken || !this.ghRepo) {
-    await this.loadGithubConfig();
-  }
-  if (!this.ghToken || !this.ghRepo) {
-    this.showToast('Set up cloud vault in Settings first');
+  if (!this.ghToken || !this.ghRepo) await this.loadGithubConfig();
+  if (!this.ghToken || !this.ghRepo || !this.githubPermissionGranted) {
+    this.showToast('Link the cloud vault in settings first', 'error');
     return;
   }
 
-  this.showToast('Fetching cloud profiles...');
-  const url = `https://api.github.com/repos/${this.ghRepo}/contents/profiles/common.json`;
+  this.fetchGithubBtn.disabled = true;
+  this.fetchGithubBtn.setAttribute('aria-busy', 'true');
+  this.showToast('Fetching cloud profiles');
+  let applied = false;
   try {
-    const res = await fetch(url, { headers: { 'Authorization': `token ${this.ghToken}` } });
-    if (res.ok) {
-      const fileJson = await res.json();
-      if (fileJson && fileJson.content) {
-        const decoded = decodeURIComponent(escape(atob(fileJson.content.replace(/\s/g, ''))));
-        const commonData = JSON.parse(decoded);
-        const profileMap = new Map();
-        if (commonData && Array.isArray(commonData.accounts)) {
-          commonData.accounts.forEach(acc => {
-            if (acc.profiles && Array.isArray(acc.profiles)) {
-              acc.profiles.forEach(email => {
-                if (!profileMap.has(email)) {
-                  profileMap.set(email, { email, accounts: [] });
-                }
-                profileMap.get(email).accounts.push(acc);
-              });
-            }
-          });
-        }
-        this.loadedProfiles = Array.from(profileMap.values());
-        chrome.storage.local.set({ loadedProfiles: this.loadedProfiles });
-        if (this.resolveProfileEmails()) {
-          this.saveAccounts(true);
-          this.render();
-        }
-        if (this.loadedProfiles.length === 0) {
-          this.showToast('No profiles found in cloud vault');
-        } else {
-          this.selectedProfileEmails.clear();
-          this.selectedAccountSecrets.clear();
-          if (this.cloudAccountsSearchInput) this.cloudAccountsSearchInput.value = '';
-          if (this.cloudAccountsClearBtn) this.cloudAccountsClearBtn.classList.add('hidden');
-          this.currentCloudAccounts = [];
-          const previewContainer = document.getElementById('github-accounts-preview');
-          if (previewContainer) previewContainer.classList.add('hidden');
-          this.renderProfileSelection();
-        }
-      } else {
-        this.showToast('No profiles found in cloud vault');
-      }
-    } else {
-      this.showToast('No profiles found in cloud vault');
-    }
-  } catch (e) {
-    this.showToast('Network error — check connection');
+    const response = await this.sendRuntimeMessage({ action: 'vault:fetch' });
+    applied = await this.applyFetchedProfiles(response, false);
+  } catch (error) {
+    this.showToast('Cloud profiles could not be saved on this device', 'error');
+  } finally {
+    this.fetchGithubBtn.disabled = false;
+    this.fetchGithubBtn.setAttribute('aria-busy', 'false');
   }
+
+  if (!applied) return;
+  this.selectedProfileEmails.clear();
+  this.selectedAccountSecrets.clear();
+  this.currentCloudAccounts = [];
+  if (this.cloudAccountsSearchInput) this.cloudAccountsSearchInput.value = '';
+  if (this.cloudAccountsClearBtn) this.cloudAccountsClearBtn.classList.add('hidden');
+  const preview = document.getElementById('github-accounts-preview');
+  if (preview) preview.classList.add('hidden');
+
+  if (this.loadedProfiles.length === 0) {
+    this.showStatus('The cloud vault has no profiles yet', 'error');
+    return;
+  }
+
+  this.renderProfileSelection();
+  this.showToast('Cloud profiles ready', 'success');
 };

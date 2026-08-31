@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Authenticator",
-  "version": "1.0",
-  "description": "A clean, simple authenticator.",
+  "version": "2.0.0",
+  "description": "A private, local-first authenticator with optional GitHub vault sync.",
   "permissions": ["storage", "identity", "identity.email"],
+  "optional_host_permissions": ["https://api.github.com/*"],
   "background": { 
     "service_worker": "background.js" 
   }, 
@@ -22,6 +23,6 @@
     "128": "icons/icon128.png"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "default-src 'self'; script-src 'self'; object-src 'none'; connect-src https://api.github.com; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self'"
   }
 }

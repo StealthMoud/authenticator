@@ -1,199 +1,225 @@
 /* global AuthenticatorApp */
 
 AuthenticatorApp.prototype.setupEventListeners = function() {
-  if (this.searchInput) {
-    this.searchInput.addEventListener('input', () => {
-      if (this.searchClearBtn) {
-        this.searchClearBtn.classList.toggle('hidden', !this.searchInput.value);
-      }
-      this.applyFiltersAndSort();
-    });
-  }
-  if (this.searchClearBtn) {
-    this.searchClearBtn.addEventListener('click', () => {
-      this.searchInput.value = '';
-      this.searchClearBtn.classList.add('hidden');
-      this.searchInput.focus();
-      this.applyFiltersAndSort();
-    });
-  }
-  if (this.cloudAccountsSearchInput) {
-    this.cloudAccountsSearchInput.addEventListener('input', () => {
-      if (this.cloudAccountsClearBtn) {
-        this.cloudAccountsClearBtn.classList.toggle('hidden', !this.cloudAccountsSearchInput.value);
-      }
-      this.filterAndRenderCloudAccounts();
-    });
-  }
-  if (this.cloudAccountsClearBtn) {
-    this.cloudAccountsClearBtn.addEventListener('click', () => {
-      this.cloudAccountsSearchInput.value = '';
-      this.cloudAccountsClearBtn.classList.add('hidden');
-      this.cloudAccountsSearchInput.focus();
-      this.filterAndRenderCloudAccounts();
-    });
-  }
-  if (this.privacyBtn) this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
-
-  if (this.exportVaultBtn) {
-    this.exportVaultBtn.addEventListener('click', () => {
-      if (this.accounts.length === 0) { this.showToast('Nothing to export'); return; }
-      this.confirmAction('Export Backup', 'Download a local backup of your 2FA codes?', () => this.exportVault());
-    });
-  }
-
-  if (this.githubSyncBtn) {
-    this.githubSyncBtn.addEventListener('click', () => {
-      if (!this.ghToken || !this.ghRepo) {
-        this.openSettings();
-      } else {
-        this.syncToGithub();
-      }
-    });
-  }
-  if (this.saveGhConfigBtn) this.saveGhConfigBtn.addEventListener('click', () => this.saveGithubConfig());
-  if (this.fetchGithubBtn) this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
-  if (this.importSelectedGhBtn) this.importSelectedGhBtn.addEventListener('click', () => this.importFromSelectedProfile());
-  if (this.importAllGhBtn) this.importAllGhBtn.addEventListener('click', () => this.importAllFromCloud());
-
-  // fix-sync opens settings, not import
-  if (this.fixSyncBtn) {
-    this.fixSyncBtn.addEventListener('click', () => this.openSettings());
-  }
-
-  // status badge action: sync if connected, else open settings
-  if (this.statusBadge) {
-    this.statusBadge.addEventListener('click', () => {
-      if (this.ghToken && this.ghRepo) {
-        this.syncToGithub();
-      } else {
-        this.openSettings();
-      }
-    });
-  }
-
-  // settings panel
-  if (this.settingsBtn) this.settingsBtn.addEventListener('click', () => this.openSettings());
-  const closeSettings = this.settingsModal?.querySelector('.close-settings');
-  if (closeSettings) closeSettings.addEventListener('click', () => this.closeSettings());
-  window.addEventListener('click', (e) => {
-    if (e.target === this.settingsModal) this.closeSettings();
+  this.searchInput.addEventListener('input', () => {
+    this.searchClearBtn.classList.toggle('hidden', !this.searchInput.value);
+    this.applyFiltersAndSort();
+  });
+  this.searchClearBtn.addEventListener('click', () => {
+    this.searchInput.value = '';
+    this.searchClearBtn.classList.add('hidden');
+    this.searchInput.focus();
+    this.applyFiltersAndSort();
   });
 
-  if (this.editVaultBtn) this.editVaultBtn.addEventListener('click', () => this.startEditingConfig());
-  if (this.cancelGhEditBtn) this.cancelGhEditBtn.addEventListener('click', () => this.cancelEditingConfig());
+  this.cloudAccountsSearchInput.addEventListener('input', () => {
+    this.cloudAccountsClearBtn.classList.toggle('hidden', !this.cloudAccountsSearchInput.value);
+    this.filterAndRenderCloudAccounts();
+  });
+  this.cloudAccountsClearBtn.addEventListener('click', () => {
+    this.cloudAccountsSearchInput.value = '';
+    this.cloudAccountsClearBtn.classList.add('hidden');
+    this.cloudAccountsSearchInput.focus();
+    this.filterAndRenderCloudAccounts();
+  });
 
-  // disconnect vault
-  if (this.disconnectBtn) {
-    this.disconnectBtn.addEventListener('click', () => {
-      this.confirmAction('Disconnect Vault', 'Remove cloud sync configuration? Your cloud data will stay intact.', () => this.disconnectVault());
-    });
-  }
+  this.privacyBtn.addEventListener('click', () => this.togglePrivacyMode());
+  this.exportVaultBtn.addEventListener('click', () => {
+    if (this.accounts.length === 0) {
+      this.showToast('There are no accounts to back up');
+      return;
+    }
+    this.confirmAction(
+      'Download readable backup?',
+      'The JSON file contains your setup secrets without encryption. Store it somewhere private.',
+      () => this.exportVault(),
+      'Download backup'
+    );
+  });
 
-  // link from import modal -> settings
-  if (this.openSettingsFromImport) {
-    this.openSettingsFromImport.addEventListener('click', () => {
-      this.importModal.classList.add('hidden');
+  this.githubSyncBtn.addEventListener('click', () => {
+    if (!this.ghToken || !this.ghRepo || !this.githubPermissionGranted) {
+      this.isEditingConfig = Boolean(this.ghToken && this.ghRepo);
       this.openSettings();
-    });
-  }
-
-  // sort order toggle
-  if (this.sortOrderBtn) {
-    this.sortOrderBtn.addEventListener('click', () => {
-      this.sortAscending = !this.sortAscending;
-      chrome.storage.local.set({ sortAscending: this.sortAscending });
-      this.updateOrderIcon();
-      this.applyFiltersAndSort();
-    });
-  }
-
-  // sort chips
-  document.querySelectorAll('.sort-chip').forEach(chip => {
-    if (chip.dataset.sort) {
-      chip.addEventListener('click', (e) => {
-        document.querySelectorAll('.sort-chip').forEach(c => c.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        this.currentSort = e.currentTarget.dataset.sort;
-        this.updateOrderIcon();
-        this.applyFiltersAndSort();
-      });
+      return;
+    }
+    this.syncToGithub(false);
+  });
+  this.statusBadge.addEventListener('click', () => {
+    if (this.ghToken && this.ghRepo && this.githubPermissionGranted && !this.syncError) {
+      this.syncToGithub(false);
+    } else {
+      this.openSettings();
     }
   });
 
-  // clear all accounts (now in settings panel)
-  if (this.clearAllBtn) {
-    this.clearAllBtn.addEventListener('click', () => {
-      if (this.accounts.length === 0) {
-        this.showToast('No data to clear'); return;
+  this.settingsSetupView.addEventListener('submit', (event) => this.saveGithubConfig(event));
+  this.fetchGithubBtn.addEventListener('click', () => this.fetchFromGithub());
+  this.importSelectedGhBtn.addEventListener('click', () => this.importFromSelectedProfile());
+  this.importAllGhBtn.addEventListener('click', () => this.importAllFromCloud());
+  this.fixSyncBtn.addEventListener('click', () => this.openSettings());
+  this.settingsBtn.addEventListener('click', () => this.openSettings());
+  this.settingsModal.querySelector('.close-settings').addEventListener('click', () => this.closeSettings());
+  this.editVaultBtn.addEventListener('click', () => this.startEditingConfig());
+  this.cancelGhEditBtn.addEventListener('click', () => this.cancelEditingConfig());
+  this.disconnectBtn.addEventListener('click', () => {
+    this.confirmAction(
+      'Disconnect cloud vault?',
+      'The GitHub token and repository link will be removed from this browser. Local accounts stay here.',
+      () => this.disconnectVault(),
+      'Disconnect'
+    );
+  });
+  this.clearAllBtn.addEventListener('click', () => {
+    if (this.accounts.length === 0) {
+      this.showToast('The local vault is already empty');
+      return;
+    }
+    this.confirmAction(
+      'Delete the local vault?',
+      'Every account will be removed from this browser. If cloud sync is linked, the removal is applied to this profile.',
+      () => this.clearAllAccounts(),
+      'Delete vault'
+    );
+  });
+
+  this.openSettingsFromImport.addEventListener('click', () => {
+    this.closeImportModal();
+    this.openSettings();
+  });
+
+  this.sortOrderBtn.addEventListener('click', async () => {
+    this.sortAscending = !this.sortAscending;
+    await this.storageSet({ sortAscending: this.sortAscending });
+    this.updateOrderIcon();
+    this.applyFiltersAndSort();
+  });
+  document.querySelectorAll('.sort-chip[data-sort]').forEach((chip) => {
+    chip.addEventListener('click', async () => {
+      this.currentSort = chip.dataset.sort;
+      await this.storageSet({ currentSort: this.currentSort });
+      this.updateOrderIcon();
+      this.applyFiltersAndSort();
+    });
+  });
+
+  this.importBtn.addEventListener('click', () => this.openImportModal('all'));
+  this.importModal.querySelector('.close-modal').addEventListener('click', () => this.closeImportModal());
+  this.importViewTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => this.setImportView(tab.dataset.importView));
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      const offset = event.key === 'ArrowRight' ? 1 : -1;
+      const next = this.importViewTabs[(index + offset + this.importViewTabs.length) % this.importViewTabs.length];
+      this.setImportView(next.dataset.importView);
+      next.focus();
+    });
+  });
+
+  this.accountList.addEventListener('click', (event) => {
+    if (event.target.closest('#add-first-btn')) this.openImportModal('all');
+    if (event.target.closest('#restore-first-btn')) {
+      this.openImportModal('restore').then(() => this.fetchFromGithub());
+    }
+  });
+
+  const bindDropZone = (zone, input, onFile) => {
+    zone.addEventListener('click', () => input.click());
+    input.addEventListener('change', (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (file) onFile(file);
+    });
+    zone.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', (event) => {
+      event.preventDefault();
+      zone.classList.remove('dragover');
+      const file = event.dataTransfer && event.dataTransfer.files[0];
+      if (file) onFile(file);
+    });
+  };
+  bindDropZone(this.dropZone, this.fileInput, (file) => this.processFile(file));
+  bindDropZone(this.backupDropZone, this.backupFileInput, (file) => this.restoreBackupFile(file));
+  this.manualForm.addEventListener('submit', (event) => this.handleManualAccount(event));
+
+  this.qrTabCamera.addEventListener('click', () => this.switchQRMode('camera'));
+  this.qrTabFile.addEventListener('click', () => this.switchQRMode('file'));
+  this.cameraSwitchToFile.addEventListener('click', () => this.switchQRMode('file'));
+  this.cameraSelect.addEventListener('change', (event) => {
+    if (event.target.value) this.startCamera(event.target.value);
+  });
+  this.requestCameraPermissionBtn.addEventListener('click', () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') });
+  });
+
+  window.addEventListener('click', (event) => {
+    if (event.target === this.importModal) this.closeImportModal();
+    if (event.target === this.settingsModal) this.closeSettings();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+      const tag = document.activeElement && document.activeElement.tagName;
+      if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) {
+        event.preventDefault();
+        this.searchInput.focus();
       }
-      this.confirmAction('Reset Vault', 'Delete all accounts from this device? This cannot be undone.', () => this.clearAllAccounts());
-    });
-  }
+    }
 
-  // import modal trigger & close
-  if (this.importBtn) this.importBtn.addEventListener('click', () => this.openImportModal('all'));
-
-  const closeImportBtn = this.importModal?.querySelector('.close-modal');
-  if (closeImportBtn) closeImportBtn.addEventListener('click', () => this.closeImportModal());
-  window.addEventListener('click', (e) => { if (e.target === this.importModal) this.closeImportModal(); });
-
-  // empty state button delegation
-  if (this.accountList) {
-    this.accountList.addEventListener('click', (e) => {
-      if (e.target) {
-        if (e.target.closest('#add-first-btn')) {
-          this.openImportModal('add');
-        } else if (e.target.closest('#restore-first-btn')) {
-          this.openImportModal('restore');
-          this.fetchFromGithub();
-        }
+    if (event.key === 'Escape') {
+      if (!this.confirmOverlay.classList.contains('hidden')) {
+        this.confirmCancelBtn.click();
+      } else if (!this.importModal.classList.contains('hidden')) {
+        this.closeImportModal();
+      } else if (!this.settingsModal.classList.contains('hidden')) {
+        this.closeSettings();
+      } else if (this.editingAccountId) {
+        this.cancelEdit();
+      } else if (this.searchInput.value) {
+        this.searchClearBtn.click();
       }
-    });
-  }
+    }
 
-  // file drop zone
-  if (this.dropZone) {
-    this.dropZone.addEventListener('click', () => this.fileInput.click());
-    this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
-    this.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); this.dropZone.classList.add('dragover'); });
-    this.dropZone.addEventListener('dragleave', () => this.dropZone.classList.remove('dragover'));
-    this.dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      this.dropZone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file) this.processFile(file);
-    });
-  }
+    if (event.key === 'Tab') this.keepFocusInsideTopDialog(event);
+  });
 
-  // camera tabs & controls
-  if (this.qrTabCamera) {
-    this.qrTabCamera.addEventListener('click', () => this.switchQRMode('camera'));
-  }
-  if (this.qrTabFile) {
-    this.qrTabFile.addEventListener('click', () => this.switchQRMode('file'));
-  }
-  if (this.cameraSwitchToFile) {
-    this.cameraSwitchToFile.addEventListener('click', () => this.switchQRMode('file'));
-  }
-  if (this.cameraSelect) {
-    this.cameraSelect.addEventListener('change', (e) => {
-      if (e.target.value) {
-        this.startCamera(e.target.value);
-      }
-    });
-  }
-  if (this.requestCameraPermissionBtn) {
-    this.requestCameraPermissionBtn.addEventListener('click', () => {
-      chrome.tabs.create({ url: chrome.runtime.getURL('permission.html') });
-    });
-  }
-
-  window.addEventListener('beforeunload', () => this.stopCamera());
-  window.addEventListener('focus', () => {
-    if (this.currentQRMode === 'camera' && !this.cameraStream && this.importModal && !this.importModal.classList.contains('hidden')) {
-      this.startCamera();
+  window.addEventListener('beforeunload', () => {
+    this.stopCamera();
+    if (this.timerInterval) clearInterval(this.timerInterval);
+  });
+  window.addEventListener('focus', async () => {
+    if (this.currentQRMode === 'camera'
+      && this.currentImportView === 'scan'
+      && !this.cameraStream
+      && !this.importModal.classList.contains('hidden')) {
+      await this.checkCameraAvailability();
+      if (this.cameraPermissionState === 'granted') this.startCamera();
     }
   });
 };
 
+AuthenticatorApp.prototype.keepFocusInsideTopDialog = function(event) {
+  const openDialogs = [this.importModal, this.settingsModal, this.confirmOverlay]
+    .filter((modal) => modal && !modal.classList.contains('hidden'));
+  const modal = openDialogs[openDialogs.length - 1];
+  if (!modal) return;
+
+  const focusable = Array.from(modal.querySelectorAll(
+    'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  )).filter((element) => element.offsetParent !== null);
+  if (focusable.length === 0) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+};

@@ -1,105 +1,82 @@
 # Authenticator
 
-A premium, secure, and beautiful Chrome extension for managing two-factor authentication (2FA) codes. Designed with glassmorphism aesthetics, responsive micro-animations, and direct GitHub-backed synchronization to keep your secrets private and in your control.
+A local-first Chrome extension for TOTP and HOTP codes, with optional synchronization to a private GitHub repository.
 
-## Screenshots
+## What it does
 
-### Main Vault View
+- Generates TOTP and HOTP codes using each account's configured algorithm, digit count, period, or counter.
+- Adds accounts from a QR image, the camera, a Base32 setup key, a local backup, or a linked cloud vault.
+- Searches and sorts by vault order, name, date added, or usage.
+- Tracks copy count and last-used time locally.
+- Hides issuer, account label, and code together with privacy mode.
+- Exports and restores a versioned JSON backup.
+- Optionally merges multiple browser profiles through one GitHub vault without treating a fresh install as a deletion.
 
-![Main View](screenshots/main_view.png)
+## Security model
 
-### Hover States & Quick Actions
+The extension has no application server. OTP generation and QR decoding happen inside the extension, and account data is kept in `chrome.storage.local` unless GitHub sync is enabled.
 
-![Hover State](screenshots/hover_state.png)
+Important boundaries:
 
-### Expanded Details Drawer
+- Chrome local storage is not an encrypted password manager. Anyone who can access the browser profile or extension data may be able to recover the setup keys.
+- Local backup files contain readable OTP setup keys. Store them as carefully as passwords.
+- GitHub sync writes readable JSON to `profiles/common.json`. Use a **private** repository and a narrowly scoped fine-grained token.
+- The token is stored in the extension's local Chrome storage and is never rendered back into the settings form.
+- Camera access is requested from a dedicated page after an explicit click. Captured video is processed on-device and is not uploaded.
+- GitHub access is an optional host permission; the service worker is the only extension component that calls the GitHub API.
 
-![Details Drawer](screenshots/details_drawer.png)
-
-### Hover Alignment in Details Mode
-
-![Expanded Hover](screenshots/expanded_hover.png)
-
-### Dedicated Settings Panel
-
-![Settings Page](screenshots/settings_page.png)
-
-### Import & Restore Center
-
-![Import Modal](screenshots/import_modal.png)
-
-## Core Features
-
-- **Premium Glassmorphism Design**: Rich translucent cards featuring backdrop blur filters, harmonized accents, and responsive layout scaling.
-- **Privacy Masking**: One-click toggling (eye icon) to mask sensitive account labels, issuer names, and current 2FA codes when presenting or using the extension in public spaces.
-- **Dynamic Search & Filtering**: Instant fuzzy search across issuers and account labels.
-- **Smart Sorting Configurations**:
-  - **Custom Order**: Sort accounts by their original addition order (supports reversing with a single click).
-  - **Alphabetical (Name)**: Sort alphabetically by issuer name and label.
-  - **Newest First**: Order accounts by addition date.
-  - **Frequency (Used)**: Auto-prioritize based on usage frequency.
-  - **Direction Toggle**: Instantly flip sorting direction (ascending/descending) with live visual feedback.
-- **Robust Local Storage**: All secret keys and configuration are stored locally in the browser sandbox via `chrome.storage.local`.
-
-## Advanced Features & UX Highlights
-
-### 1. Sequential Indexing
-
-Each account card is prefixed with a sequential index number (e.g., `#1`, `#2`, `#3`). This provides instant reference points for tracking how many accounts you have and how they are ordered when scrolling through your vault.
-
-### 2. Contextual Metadata Drawer
-
-Clicking the Info (`i`) action button expands the card to reveal deep metadata for auditing:
-
-- **Date Added**: Real historical timestamp (retrieved and backfilled directly from your vault's Git commit history).
-- **Last Used**: Accurate tracking of when the OTP code was last copied.
-- **Times Used**: Cumulative counter showing access frequency.
-- **Spec**: Full visibility of the TOTP specification (e.g., `SHA1/6d/30s`).
-
-### 3. Chrome Profile Identification & Access Auditing
-
-Prevent cross-profile leakage. The expanded card lists all browser profiles actively syncing that specific credential under **Synced Profiles** (e.g., `work@example.com`, `personal@example.com`).
-
-### 4. Interactive Click-to-Copy Triggers
-
-To prevent accidental clipboard overwrites when clicking around cards, click-to-copy is scoped specifically to:
-
-- The sequential index number.
-- The actual 2FA code element.
-- The dedicated copy action icon.
-Interactive elements feature hover glow effects and tactile scale-down active animations.
-
-### 5. Fluid Layout Adaptability
-
-On hover, the card height expands cleanly, action buttons fade/slide in at the top-right, and the active 2FA code slides down to the bottom-right. The layout prevents content squishing, and long labels/issuers are truncated with an ellipsis on a single line to avoid layout breaks. When the details drawer is open, hover height expands to `204px`, shifting the divider line down so the sliding code never overlaps borders.
-
-## Cloud Vault Synchronization
-
-Rather than relying on third-party servers, Authenticator syncs directly with a private GitHub repository under your control:
-
-- **Zero Intermediary Servers**: The extension talks directly to the GitHub API via client-side requests.
-- **Merge Conflict Resolution**: Synchronizing performs a pull-and-merge of remote changes with local storage, ensuring updates from other Chrome profiles are safely combined.
-- **Isolated Target Files**: Separate profiles write to profile-isolated files in the vault repository, preventing data leakage.
-
-### Setup Instructions
-
-1. **Create Repository**: Create a private GitHub repository (e.g., `authenticator-vault`).
-2. **Generate Token**: Generate a Personal Access Token (classic) on GitHub with the `repo` scope.
-3. **Configure Settings**: Open the extension, click the gear icon (Settings) in the top-right, and enter:
-   - **GitHub Personal Access Token**
-   - **Repository Path** (format: `username/repository-name`)
-4. **Link Vault**: Click **Link Cloud Vault**. The badge in the header will update to show the connection status, and background synchronization will automatically handle backups.
-
-## Local Backups
-
-If you prefer offline backups:
-
-- **Export**: Click **Export File** to save your decrypted vault as a JSON file.
-- **Import**: Click **Sync Now / Import** and drag-and-drop or select your backup file to restore your accounts instantly.
-
-## Developer & Installation
+## Install locally
 
 1. Clone or download this repository.
-2. Open Chrome and navigate to `chrome://extensions/`.
-3. Enable **Developer mode** (top-right toggle).
-4. Click **Load unpacked** and select the root directory of this extension.
+2. Open `chrome://extensions/`.
+3. Enable **Developer mode**.
+4. Choose **Load unpacked** and select this directory.
+5. Pin **Authenticator** from Chrome's extensions menu if desired.
+
+## Add or restore accounts
+
+Open the popup and select **Add**:
+
+- **Scan** accepts a QR image or uses the camera.
+- **Enter key** creates a TOTP account from an issuer, label, Base32 secret, algorithm, digits, and period.
+- **Restore** imports an Authenticator JSON backup or selected accounts from a linked GitHub vault.
+
+Google Authenticator migration QR payloads are supported. Malformed or unsupported accounts are rejected rather than stored.
+
+## Optional GitHub vault
+
+1. Create a private GitHub repository.
+2. Create a fine-grained personal access token limited to that repository, with **Contents: Read and write**.
+3. Open **Settings** in Authenticator.
+4. Enter the token and repository as `owner/repository`.
+5. Select **Link and sync** and approve access to `api.github.com`.
+
+The sync engine sanitizes remote data, retries write conflicts, records explicit deletion tombstones, preserves other profiles, and skips the GitHub write when nothing changed. Disconnecting removes the saved token and optional GitHub host permission from this browser profile; it does not delete the repository.
+
+## Backups
+
+Select **Backup** in the action dock and confirm the plaintext warning. The downloaded document uses schema version 2 and can be restored from **Add → Restore**. Legacy account-array JSON files are also accepted.
+
+## Development
+
+The extension is dependency-free at runtime. The test suite uses Node's built-in test runner.
+
+```sh
+npm run check
+```
+
+Key modules:
+
+- `background.js` — trusted service-worker messaging, GitHub reads/writes, timeouts, and conflict retries.
+- `lib/vaultSync.js` — pure account validation, merge, deletion, and profile logic.
+- `js/actionImport.js` — QR, migration, manual-entry, and backup import flows.
+- `js/uiRender.js` — account cards, editing, privacy, and OTP presentation.
+- `tests/vaultSync.test.js` — deterministic sync and validation coverage.
+
+## Permissions
+
+- `storage` stores vault data and preferences in the current Chrome profile.
+- `identity` and `identity.email` identify a Chrome profile for multi-profile vault membership; a random local identifier is used when email is unavailable.
+- `https://api.github.com/*` is optional and requested only when GitHub sync is configured.
+
+The Manifest V3 content security policy permits only packaged scripts and styles, local/data/blob media, and GitHub API connections.
